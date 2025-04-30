@@ -39,7 +39,7 @@ function calculate_performance!(
     end
 
     if count_success == 0
-        indiv.performance =  Performance(err_probs, 0,0, 0, 0)
+        indiv.performance =  Performance(counts_nb_errors, 0,0, 0, 0) # TODO this is probably going to break the optimization runs and lead to picking low performing individuals for certain cost functions -- do this better
         return indiv.performance
     end
 

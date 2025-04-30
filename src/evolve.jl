@@ -41,6 +41,32 @@ function step!(
     cull!(population, pop_size)
 end
 
+function multiple_steps_with_history!(
+    population::Population, steps;
+    step_callback=()->nothing,
+    step_config... # same as step!
+)
+    fitness_history = Matrix{Float64}(undef, steps+1, step_config[:pop_size])
+    fitness_history[1, :] = [i.fitness for i in population.individuals]
+    transition_counts = []
+
+    for i in 1:steps
+        step!(population; step_config...)
+        fitness_history[i+1,:] = [i.fitness for i in population.individuals]
+        push!(transition_counts, counter([i.history for i in population.individuals]))
+        step_callback()
+    end
+
+    transition_counts_keys = collect(union(keys.(transition_counts)...))
+    transition_counts_matrix = Matrix{Int}(undef, length(transition_counts), length(transition_counts_keys))
+    for (i, t) in enumerate(transition_counts)
+        for (j, k) in enumerate(transition_counts_keys)
+            transition_counts_matrix[i, j] = get(t, k, 0)
+        end
+    end
+    return population, fitness_history, transition_counts_matrix, transition_counts_keys
+end
+
 "Adds mutated individuals to the given individual vector."
 function add_mutations!(
     individuals::Vector{Individual};

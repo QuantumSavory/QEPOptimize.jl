@@ -68,3 +68,17 @@ function rand_op(valid_pairs)
     end
     return op
 end
+
+function make_child(mother_ops::Vector{Any}, father_ops::Vector{Any},max_ops::Int64)
+    # Child algorithm:
+    # choose a location to 'split' the circuits of both the mother and father. The mother and father have their own splits. All ops up to the split will be taken from the mother, and all ops from the end-minus-split to the end will be taken from the father. 
+
+    # to make sure that we do not pass the max ops limit, the max split will be half of the max ops. This is because the amount of ops in the end will be mother_split + father_split
+    mother_split = rand(1:min(convert(Int,floor(max_ops/2)),length(mother_ops)))
+    father_split = rand(1:min(convert(Int,floor(max_ops/2)),length(father_ops)))
+    
+    # mark the history, and concat the ops
+    child = Individual(:child,[mother_ops[1:mother_split]; father_ops[end-father_split+1:end]])
+    @assert (mother_split + father_split) == length(child.ops)
+    return child
+end

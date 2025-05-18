@@ -69,6 +69,7 @@ function rand_op(valid_pairs)
     return op
 end
 
+"make a 'child' indivdual from meshing together two individuals' operations"
 function make_child(mother_ops::Vector{Any}, father_ops::Vector{Any},max_ops::Int64)
     # Child algorithm:
     # choose a location to 'split' the circuits of both the mother and father. The mother and father have their own splits. All ops up to the split will be taken from the mother, and all ops from the end-minus-split to the end will be taken from the father. 
@@ -81,4 +82,20 @@ function make_child(mother_ops::Vector{Any}, father_ops::Vector{Any},max_ops::In
     child = Individual(:child,[mother_ops[1:mother_split]; father_ops[end-father_split+1:end]])
     @assert (mother_split + father_split) == length(child.ops)
     return child
+end
+
+"make a new individual with two operations randomly swapped"
+function swap_op(ops::Vector{Any})
+    @assert length(ops) >= 2 
+
+    # select locations
+    l = length(ops)
+    i = rand(1:l)
+    j = i 
+    while (j==i) j = rand(1:l); end # select until i != j  
+
+    # swap the ops
+    new_ops = deepcopy(ops) 
+    new_ops[j],new_ops[i] = new_ops[i],new_ops[j]
+    return Individual(:swap,new_ops)
 end

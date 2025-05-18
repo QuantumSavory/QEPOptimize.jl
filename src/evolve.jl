@@ -77,6 +77,7 @@ function add_mutations!(
     p_mutate=0.1,
     p_gain=0.1,
     p_child=0.1,
+    p_swap=0.1
 )
     mutants = Individual[]
 
@@ -90,12 +91,14 @@ function add_mutations!(
             # swap_op::Bool   = TODO
             _mutate::Bool = rand() < p_mutate && l > 0
             _child::Bool = rand() < p_child && l > 0 
+            _swap_op::Bool = rand() < p_swap && l > 1
 
             _drop_op && push!(mutants, drop_op(indiv))
             _gain_op && push!(mutants, gain_op(indiv; valid_pairs))
             _mutate && push!(mutants, mutate(indiv))
              # parents will be this indiv, and a random other one
             _child && push!(mutants, make_child(indiv.ops, rand(individuals).ops,max_ops)) 
+            _swap_op && push!(mutants,swap_op(indiv.ops))
 
         end
     end

@@ -1,4 +1,4 @@
-using ..QEPOptimize
+using QEPOptimize
 using TestItemRunner
 
 # filter for the test

@@ -1,5 +1,4 @@
 using TestItems
-# , mutate,drop_op,gain_op,rand_op,
 
 @testmodule setup begin
     using BPGates
@@ -46,9 +45,10 @@ end
     using BPGates
     
     # Check that rand_op returns a valid operation
-    ops = rand_op(setup.pairs)
-    @test (ops isa BPGates.CNOTPerm ) |(ops isa BPGates.BellOp ) 
-    
+    for _ in 1:100 
+        ops = rand_op(setup.pairs)
+        @test (ops isa BPGates.CNOTPerm ) | (ops isa BPGates.BellOp ) 
+    end
     # Test multiple calls to ensure variety
     ops = [rand_op(setup.pairs) for _ in 1:10]
     

@@ -122,7 +122,7 @@ function simulate_and_sort!(
     noises=[NetworkFidelity(0.9)]
 )
     # calculate and update each individual's performance
-    #=Threads.@threads=# for indiv in population.individuals
+    function update!(indiv)
         calculate_performance!(indiv;
             num_simulations,
             purified_pairs,
@@ -131,6 +131,12 @@ function simulate_and_sort!(
             noises)
         indiv.fitness = indiv.performance.purified_pairs_fidelity # TODO make it possible to select the type of fitness to evaluate
     end
+
+    # Parallel processing for performance calculations. Max threads will be set by the threads specified when running julia. ex) julia -t 16
+    max_threads::Int = Threads.nthreads()
+
+    tmap(update!,population.individuals; nchunks=max_threads)
+    
     sort_pop!(population)
 end
 

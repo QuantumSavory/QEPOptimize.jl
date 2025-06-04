@@ -95,7 +95,7 @@ function swap_op(ops::Vector{Any})
     while (j==i) j = rand(1:l); end # select until i != j  
 
     # swap the ops
-    new_ops = deepcopy(ops) 
+    new_ops = copy(ops) 
     new_ops[j],new_ops[i] = new_ops[i],new_ops[j]
     return Individual(:swap,new_ops)
 end

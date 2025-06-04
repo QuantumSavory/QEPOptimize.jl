@@ -47,7 +47,7 @@ end
     # Check that rand_op returns a valid operation
     for _ in 1:100 
         ops = rand_op(setup.pairs)
-        @test (ops isa BPGates.CNOTPerm ) | (ops isa BPGates.BellOp ) 
+        @test (ops isa BPGates.CNOTPerm ) | (ops isa BPGates.BellOp ) | (ops isa BPGates.BellMeasure)
     end
     # Test multiple calls to ensure variety
     ops = [rand_op(setup.pairs) for _ in 1:10]

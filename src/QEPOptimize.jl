@@ -13,10 +13,6 @@ using DataStructures: counter
 
 using OhMyThreads: tmap
 
-using Base.Threads: @threads
-
-using Base: Semaphore, acquire, release
-
 export Individual, calculate_performance!, f_in_to_pauli, NetworkFidelity, NetworkPauliNoise, Population, # TODO order these neatly
     multiple_steps_with_history!,
     analyze_f_out_vs_f_in, plot_circuit_analysis, plot_fitness_history

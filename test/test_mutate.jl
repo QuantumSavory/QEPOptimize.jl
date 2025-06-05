@@ -83,6 +83,6 @@ end
     @test diff_mutes > 1
     # should get some identical though (small sample)
     @test diff_mutes < (samples * .9)
-    print("Different mutes for ", samples," samples: ", diff_mutes,"\n")
+    #print("Different mutes for ", samples," samples: ", diff_mutes,"\n")
 
 end

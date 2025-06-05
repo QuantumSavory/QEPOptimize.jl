@@ -64,7 +64,7 @@ function plot_fitness_history(
     for i in 1:size(transition_counts_matrix, 2)
         lines!(a_type, transition_counts_matrix[:,i], label=string(transition_counts_keys[i]))
     end
-    axislegend(a_type, position=:rb)
+    axislegend(a_type, position=:rb,labelsize=10,patchsize=(10,10))
 
     return fig
 end

@@ -79,31 +79,50 @@ function add_mutations!(
     p_child=0.1,
     p_swap=0.1
 )
-    mutants = Individual[]
+    # a function that can be given to each thread, along with the required data, including an array to store the mutes
+    function indiv_to_mutes(indiv)
+        thread_mutants = Individual[]
+        l = length(indiv.ops)
 
-    # For every mutation per individual, up to the limit
-    for old_indiv in individuals
         for _ in 1:new_mutants
-            indiv = copy(old_indiv)
-            l = length(indiv.ops)
+            # choose which mutations happen 
             _drop_op::Bool   = rand() < p_drop   && l > 0
             _gain_op::Bool   = rand() < p_gain   && l < max_ops
-            # swap_op::Bool   = TODO
             _mutate::Bool = rand() < p_mutate && l > 0
-            _child::Bool = rand() < p_child && l > 0 
+            _child::Bool = length(individuals) > 1 && rand() < p_child && l > 0 
             _swap_op::Bool = rand() < p_swap && l > 1
 
-            _drop_op && push!(mutants, drop_op(indiv))
-            _gain_op && push!(mutants, gain_op(indiv; valid_pairs))
-            _mutate && push!(mutants, mutate(indiv))
-             # parents will be this indiv, and a random other one
-            _child && push!(mutants, make_child(indiv.ops, rand(individuals).ops,max_ops)) 
-            _swap_op && push!(mutants,swap_op(indiv.ops))
+            # do mutes 
+            _drop_op && push!(thread_mutants, drop_op(indiv))
+            _gain_op && push!(thread_mutants, gain_op(indiv; valid_pairs=valid_pairs))
+            _mutate && push!(thread_mutants, mutate(indiv))
+            _swap_op && push!(thread_mutants, swap_op(indiv.ops))
 
+            if _child 
+                # parents will be this indiv, and a random other one. Make sure it is not the same as this one 
+                partner = rand(individuals)
+
+                while partner === indiv
+                    partner = rand(individuals)
+                end
+            
+                partner_ops = partner.ops 
+
+                # we have the partner now, make the child
+                push!(thread_mutants, make_child(indiv.ops, partner_ops, max_ops))
+            end
+            
         end
+        return thread_mutants
     end
 
-    ## add all children back to the individuals vector
+    # Max threads will be set by the threads specified when running julia. ex) julia -t 16
+    max_threads::Int = Threads.nthreads()
+
+    # populate the thread_mutes by running the function on each thread
+    mutants = tmapreduce(indiv_to_mutes,vcat,individuals; nchunks=max_threads) # TODO the reduce operation should be vcat
+
+    ## add all mutes back to the individuals vector
     append!(individuals, mutants)
 end
 
@@ -122,7 +141,7 @@ function simulate_and_sort!(
     noises=[NetworkFidelity(0.9)]
 )
     # calculate and update each individual's performance
-    #=Threads.@threads=# for indiv in population.individuals
+    function update!(indiv)
         calculate_performance!(indiv;
             num_simulations,
             purified_pairs,
@@ -131,6 +150,12 @@ function simulate_and_sort!(
             noises)
         indiv.fitness = indiv.performance.purified_pairs_fidelity # TODO make it possible to select the type of fitness to evaluate
     end
+
+    # Parallel processing for performance calculations. Max threads will be set by the threads specified when running julia. ex) julia -t 16
+    max_threads::Int = Threads.nthreads()
+
+    tmap(update!,population.individuals; nchunks=max_threads)
+    
     sort_pop!(population)
 end
 

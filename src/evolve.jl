@@ -89,7 +89,7 @@ function add_mutations!(
             _drop_op::Bool   = rand() < p_drop   && l > 0
             _gain_op::Bool   = rand() < p_gain   && l < max_ops
             _mutate::Bool = rand() < p_mutate && l > 0
-            _child::Bool = length(individuals)>1 && rand() < p_child && l > 0 
+            _child::Bool = length(individuals) > 1 && rand() < p_child && l > 0 
             _swap_op::Bool = rand() < p_swap && l > 1
 
             # do mutes 
@@ -120,7 +120,7 @@ function add_mutations!(
     max_threads::Int = Threads.nthreads()
 
     # populate the thread_mutes by running the function on each thread
-    mutants = tmapreduce(indiv_to_mutes,individuals; nchunks=max_threads) # TODO the reduce operation should be vcat
+    mutants = tmapreduce(indiv_to_mutes,vcat,individuals; nchunks=max_threads) # TODO the reduce operation should be vcat
 
     ## add all mutes back to the individuals vector
     append!(individuals, mutants)

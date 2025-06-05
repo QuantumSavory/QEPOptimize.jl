@@ -11,7 +11,7 @@ using Random: randperm
 
 using DataStructures: counter
 
-using OhMyThreads: tmap
+using OhMyThreads: tmap,tmapreduce
 
 export Individual, calculate_performance!, f_in_to_pauli, NetworkFidelity, NetworkPauliNoise, Population, # TODO order these neatly
     multiple_steps_with_history!,

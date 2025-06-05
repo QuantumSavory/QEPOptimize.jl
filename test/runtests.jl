@@ -5,10 +5,6 @@ using TestItemRunner
 testfilter = ti -> begin
   exclude = Symbol[]
   # From QuantumSavory.jl
-  # Only do the plotting tests if the ENV variable `QEPO_PLOT_TEST` is set
-  if get(ENV,"QEPO_PLOT_TEST","")!="true"
-    push!(exclude, :examples_plotting)
-  end
   if get(ENV,"JET_TEST","")!="true"
     push!(exclude, :jet)
   end

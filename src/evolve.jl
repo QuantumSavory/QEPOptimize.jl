@@ -154,7 +154,7 @@ function simulate_and_sort!(
     # Parallel processing for performance calculations. Max threads will be set by the threads specified when running julia. ex) julia -t 16
     max_threads::Int = Threads.nthreads()
 
-    tmap(update!,population.individuals; nchunks=max_threads)
+    tmap(update!,population.individuals)
     
     sort_pop!(population)
 end

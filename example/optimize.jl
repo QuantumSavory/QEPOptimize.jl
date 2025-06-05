@@ -50,7 +50,7 @@ display(fig)
 ##
 
 best_circuit = pop.individuals[1]
-displaycircuit(best_circuit.ops)
+# displaycircuit(best_circuit.ops)
 
 ##
 

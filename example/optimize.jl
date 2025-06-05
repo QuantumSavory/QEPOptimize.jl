@@ -1,5 +1,5 @@
 using QEPOptimize
-using QEPOptimize: initialize_pop!, step!, NetworkFidelity # TODO export these
+using QEPOptimize: initialize_pop!, step!, NetworkFidelity, MeasurementError # TODO export these
 using BPGates: PauliNoise # TODO re-export from QEPOptimize
 
 using CairoMakie
@@ -13,7 +13,7 @@ config = (;
     purified_pairs=1,
     code_distance=1,
     pop_size = 20,
-    noises=[NetworkFidelity(0.9), PauliNoise(0.01/3, 0.01/3, 0.01/3)],
+    noises=[NetworkFidelity(0.9), PauliNoise(0.01/3, 0.01/3, 0.01/3), MeasurementError(0.1)],
 )
 
 init_config = (;

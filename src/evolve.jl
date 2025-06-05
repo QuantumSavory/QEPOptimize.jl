@@ -70,7 +70,6 @@ end
 "Adds mutated individuals to the given individual vector."
 function add_mutations!(
     individuals::Vector{Individual};
-    # @TODO the variables below would be better set locally as static constants, to be sure that they do not change while multiple threads are accessing them. Doing this in julia is not staightforward though
     max_ops::Int=5,
     valid_pairs=1:1,
     new_mutants::Int=10,
@@ -80,13 +79,9 @@ function add_mutations!(
     p_child=0.1,
     p_swap=0.1
 )
-    amount_indivs = length(individuals)
-
-    # make sure to avoid getting stuck in a loop
-    @assert amount_indivs > 1
-
     # a function that can be given to each thread, along with the required data, including an array to store the mutes
-    function indiv_to_mutes!((indiv,thread_mutants,index))
+    function indiv_to_mutes(indiv)
+        thread_mutants = Individual[]
         l = length(indiv.ops)
 
         for _ in 1:new_mutants
@@ -94,7 +89,7 @@ function add_mutations!(
             _drop_op::Bool   = rand() < p_drop   && l > 0
             _gain_op::Bool   = rand() < p_gain   && l < max_ops
             _mutate::Bool = rand() < p_mutate && l > 0
-            _child::Bool = rand() < p_child && l > 0 
+            _child::Bool = length(individuals)>1 && rand() < p_child && l > 0 
             _swap_op::Bool = rand() < p_swap && l > 1
 
             # do mutes 
@@ -105,32 +100,27 @@ function add_mutations!(
 
             if _child 
                 # parents will be this indiv, and a random other one. Make sure it is not the same as this one 
-                partner_index = rand(1:amount_indivs)
+                partner = rand(individuals)
 
-                while partner_index == index
-                    partner_index = rand(1:amount_indivs)
+                while partner === indiv
+                    partner = rand(individuals)
                 end
             
-                partner_ops = individuals[partner_index].ops 
+                partner_ops = partner.ops 
 
                 # we have the partner now, make the child
                 push!(thread_mutants, make_child(indiv.ops, partner_ops, max_ops))
             end
             
         end
+        return thread_mutants
     end
-
-    thread_mutes_storage = [Individual[] for _ in 1:amount_indivs] # mutations storage for each thread
 
     # Max threads will be set by the threads specified when running julia. ex) julia -t 16
     max_threads::Int = Threads.nthreads()
 
     # populate the thread_mutes by running the function on each thread
-    packed_thread_data = [[individuals[i], thread_mutes_storage[i],i] for i in 1:amount_indivs]
-    tmap(indiv_to_mutes!,packed_thread_data; nchunks=max_threads)
-
-    # collect thread mutations from the array of arrays thread_mutes into mutants 
-    mutants = vcat(thread_mutes_storage...)
+    mutants = tmapreduce(indiv_to_mutes,individuals; nchunks=max_threads) # TODO the reduce operation should be vcat
 
     ## add all mutes back to the individuals vector
     append!(individuals, mutants)

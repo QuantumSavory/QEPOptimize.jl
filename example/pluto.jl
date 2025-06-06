@@ -17,6 +17,7 @@ macro bind(def, element)
 end
 
 # ╔═╡ 353e15de-0a9b-4107-a265-28953e1deee2
+# ╠═╡ show_logs = false
 begin
 	using Pkg
 	Pkg.pkg"add Revise, CairoMakie, PlutoUI, Quantikz, BPGates, QuantumClifford"
@@ -211,10 +212,10 @@ end
 # ╟─c09c7bb8-1d08-45da-81ca-0cf1d1985b91
 # ╟─451be68d-b0bb-4b1b-b7fa-5c39618f95de
 # ╠═988e9e99-cf93-46a3-be59-11c11e316b07
-# ╠═1b6a9400-9d3b-42f1-a83f-c16f8134cb93
-# ╠═e876ddcf-d2c9-401e-af83-368fbd5ba593
-# ╠═4ab68db5-70cd-45e1-90bb-9fbb2830a3e4
-# ╠═81aa21b4-50f0-4695-a9d0-fd998b0c0cc1
+# ╟─1b6a9400-9d3b-42f1-a83f-c16f8134cb93
+# ╟─e876ddcf-d2c9-401e-af83-368fbd5ba593
+# ╟─4ab68db5-70cd-45e1-90bb-9fbb2830a3e4
+# ╟─81aa21b4-50f0-4695-a9d0-fd998b0c0cc1
 # ╟─55dec933-ace8-4a90-bfc3-3dcd9e23a4cc
 # ╟─e19cb382-99ae-4629-8242-83827c9e3631
 # ╠═49894406-6dfe-4aeb-8193-e31731bfab65

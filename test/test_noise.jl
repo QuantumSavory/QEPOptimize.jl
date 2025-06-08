@@ -51,3 +51,66 @@ end
     end
     
 end
+
+@testitem "affectedqubits" begin
+    using QEPOptimize: affectedqubits
+    using BPGates
+
+    # Test with CNOTPerm
+    op = BPGates.CNOTPerm(2, 1, 2, 4)
+    qubits = affectedqubits(op)
+    @test qubits == (2, 4) # correct format
+
+    # Test with BellMeasure
+    op = BPGates.BellMeasure(1, 1)
+    qubits = affectedqubits(op)
+    @test qubits == (1,)
+
+    # Test with operation with no qubits (if such exists)
+    struct DummyOp end
+    qubits = affectedqubits(DummyOp())
+    @test qubits == ()
+
+    # Test with NoisyBellMeasureNoisyReset
+    op = BPGates.NoisyBellMeasureNoisyReset(BPGates.BellMeasure(1, 1), 0.1, 0.01, 0.01, 0.01)
+    qubits = affectedqubits(op)
+    @test qubits == (1,)
+
+    # Test with PauliNoiseBellGate
+    op = BPGates.PauliNoiseBellGate(BPGates.CNOTPerm(2, 1, 2, 4), 0.01, 0.01, 0.01)
+    qubits = affectedqubits(op)
+    @test qubits == (2, 4)
+    
+end
+
+@testitem "Add T1T2 noise" setup=[noise_setup] begin
+    using QEPOptimize: T1T2Noise, noisify_circuit
+    using BPGates
+    noise_model = T1T2Noise(1,1)
+
+    noisy_circuit = noisify_circuit(noise_model,noise_setup.test_ops;number_registers=noise_setup.registers)
+
+    # Check that the length of the noisy circuit is greater than the original
+    @test length(noisy_circuit) > length(noise_setup.test_ops)
+
+    # Check that the noisy circuit contains the correct amount of T1T2Noise operations
+    t1_ops = filter(op -> isa(op, BPGates.T1NoiseOp), noisy_circuit)
+    @test length(t1_ops) == 9
+    t2_ops = filter(op -> isa(op, BPGates.T2NoiseOp), noisy_circuit)
+    @test length(t2_ops) == 9
+
+    # test with small circuit example
+    noisy_circuit_small = noisify_circuit(noise_model,noise_setup.test_ops_small;number_registers=noise_setup.registers)
+    # Check that the length of the noisy circuit is greater than the original
+    @test length(noisy_circuit_small) > length(noise_setup.test_ops_small)
+    # Check that the noisy circuit contains the correct amount of T1T2Noise operations
+    t1_ops_small = filter(op -> isa(op, BPGates.T1NoiseOp), noisy_circuit_small)
+    @test length(t1_ops_small) == 1
+    t2_ops_small = filter(op -> isa(op, BPGates.T2NoiseOp), noisy_circuit_small)
+    @test length(t2_ops_small) == 1
+
+   
+ 
+end
+
+

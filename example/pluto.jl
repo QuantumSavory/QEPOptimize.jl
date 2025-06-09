@@ -60,6 +60,12 @@ md"""
 
 * Gate error Z: $(@bind pauliz PlutoUI.Slider(0.:0.002:0.1, default=0.01, show_value=true))
 
+* Measurement Error: $(@bind measurement_error PlutoUI.Slider(0.:0.01:0.5, default=0.1, show_value=true))
+
+* T1 time (s): $(@bind t1 PlutoUI.Slider(0.01:0.01:3, default=1, show_value=true))
+
+* T2 time (s): $(@bind t2 PlutoUI.Slider(0.01:0.01:3, default=1, show_value=true))
+
 ## Simulation Parameters
 
 * Number of Simulations: $(@bind num_simulations PlutoUI.Slider(100:100:5000, default=1000, show_value=true))
@@ -91,7 +97,7 @@ begin
 	    purified_pairs=purified_pairs,
 	    code_distance=1, # Not needed to change for now
 	    pop_size=pop_size,
-	    noises=[NetworkFidelity(network_fidelity), PauliNoise(paulix, pauliy, pauliz)],
+	    noises=[NetworkFidelity(network_fidelity), PauliNoise(paulix, pauliy, pauliz),MeasurementError(measurement_error),T1T2Noise(t1,t2)],
 	)
 	
 	init_config = (;
@@ -208,8 +214,8 @@ end
 # ╟─8fc5cb18-70cc-4846-a62b-4cda69df12b0
 # ╟─353e15de-0a9b-4107-a265-28953e1deee2
 # ╟─6419143d-dc3a-47f0-8791-004e57b911c1
-# ╟─7419143d-dc3a-47f0-8791-004e57b911c2
-# ╟─c09c7bb8-1d08-45da-81ca-0cf1d1985b91
+# ╠═7419143d-dc3a-47f0-8791-004e57b911c2
+# ╠═c09c7bb8-1d08-45da-81ca-0cf1d1985b91
 # ╟─451be68d-b0bb-4b1b-b7fa-5c39618f95de
 # ╠═988e9e99-cf93-46a3-be59-11c11e316b07
 # ╟─1b6a9400-9d3b-42f1-a83f-c16f8134cb93

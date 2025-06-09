@@ -109,8 +109,26 @@ end
     t2_ops_small = filter(op -> isa(op, BPGates.T2NoiseOp), noisy_circuit_small)
     @test length(t2_ops_small) == 1
 
-   
- 
 end
 
+@testitem "is_only_noise" begin
+    # Check if the function 'is_only_noise' correctly identifies noise operations, and does not identify non-noise operations as noise.
+    using QEPOptimize: is_only_noise
+    using BPGates
+    # Noise ops: T1NoiseOp, T2NoiseOp, PauliNoiseOp
+    # Non-noise ops: CNOTPerm, BellMeasure, NoisyBellMeasureNoisyReset, PauliNoiseBellGate
+    # Noise:
+    @test is_only_noise(BPGates.T1NoiseOp(1, 0.1)) == true
+    @test is_only_noise(BPGates.T2NoiseOp(1, 0.1)) == true
+    @test is_only_noise(BPGates.PauliNoiseOp(1, 0.1,0.1,0.1)) == true
+    # Non-noise:
+    @test is_only_noise(BPGates.CNOTPerm(1, 2, 3, 4)) == false
+    @test is_only_noise(BPGates.BellMeasure(1, 2)) == false
+    @test is_only_noise(BPGates.NoisyBellMeasureNoisyReset(BPGates.BellMeasure(1, 2), 0.1, 0.01, 0.01, 0.01)) == false
+    @test is_only_noise(BPGates.PauliNoiseBellGate(BPGates.CNOTPerm(1, 2, 3, 4), 0.1, 0.01, 0.01)) == false
+    # Test with a custom operation that is not noise
+    struct CustomOp end
+    @test is_only_noise(CustomOp()) == false
 
+
+end

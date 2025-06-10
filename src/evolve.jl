@@ -50,7 +50,7 @@ function multiple_steps_with_history!(
     fitness_history[1, :] = [i.fitness for i in population.individuals]
     transition_counts = []
 
-    for i in 1:steps
+    @progress for i in 1:steps
         step!(population; step_config...)
         fitness_history[i+1,:] = [i.fitness for i in population.individuals]
         push!(transition_counts, counter([i.history for i in population.individuals]))

@@ -16,7 +16,7 @@ Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 [compat]
 BPGates = "1.2"
 DataStructures = "0.18.22"
-Makie = "0.22.4"
+Makie = "0.22.4, 0.23"
 OhMyThreads = "0.8.3"
 ProgressLogging = "0.1.4"
 QuantumClifford = "0.9"

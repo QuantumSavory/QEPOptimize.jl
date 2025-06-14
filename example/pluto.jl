@@ -29,7 +29,7 @@ begin
 	using Quantikz
 	using QEPOptimize
 	using ProgressLogging
-	using QEPOptimize: initialize_pop!, step!, NetworkFidelity
+	using QEPOptimize: initialize_pop!, step!, NetworkFidelity, to_qasm, to_stabilizer
 	using BPGates
 	using BPGates: PauliNoise, BellMeasure, CNOTPerm
 	using QuantumClifford: SparseGate, sCNOT, affectedqubits, BellMeasurement, Reset, sMX, sMZ, sMY
@@ -63,7 +63,7 @@ md"""
 
 ## Simulation Parameters
 
-* Number of Simulations: $(@bind num_simulations PlutoUI.Slider(100:100:5000, default=1000, show_value=true))
+* Number of Simulations: $(@bind num_simulations PlutoUI.Slider(100:100:10000, default=1000, show_value=true))
 
 * Population Size: $(@bind pop_size PlutoUI.Slider(10:10:100, default=20, show_value=true))
 
@@ -205,11 +205,27 @@ begin
 	end
 end
 
+
+# ╔═╡ d5fc459c-2c34-4f2f-a7ab-bce5e196ce1e
+begin
+	qasm = to_qasm(best_circuit.ops,number_registers,purified_pairs;comments=true)
+	print(qasm)
+end
+
+# ╔═╡ 1a21ace6-b448-49d8-b544-97e8c0194723
+s_out = to_stabilizer(best_circuit.ops,number_registers)
+
+# ╔═╡ eac9bbe6-29c4-402b-84af-c88fb826a782
+print(s_out)
+
+# ╔═╡ 7674a28f-7bf2-426a-817f-68f83e6425d7
+
+
 # ╔═╡ Cell order:
 # ╟─8fc5cb18-70cc-4846-a62b-4cda69df12b0
 # ╠═353e15de-0a9b-4107-a265-28953e1deee2
 # ╟─6419143d-dc3a-47f0-8791-004e57b911c1
-# ╠═7419143d-dc3a-47f0-8791-004e57b911c2
+# ╟─7419143d-dc3a-47f0-8791-004e57b911c2
 # ╠═c09c7bb8-1d08-45da-81ca-0cf1d1985b91
 # ╟─451be68d-b0bb-4b1b-b7fa-5c39618f95de
 # ╠═988e9e99-cf93-46a3-be59-11c11e316b07
@@ -217,8 +233,12 @@ end
 # ╠═e876ddcf-d2c9-401e-af83-368fbd5ba593
 # ╠═4ab68db5-70cd-45e1-90bb-9fbb2830a3e4
 # ╠═81aa21b4-50f0-4695-a9d0-fd998b0c0cc1
-# ╟─55dec933-ace8-4a90-bfc3-3dcd9e23a4cc
-# ╟─e19cb382-99ae-4629-8242-83827c9e3631
+# ╠═55dec933-ace8-4a90-bfc3-3dcd9e23a4cc
+# ╠═e19cb382-99ae-4629-8242-83827c9e3631
 # ╠═49894406-6dfe-4aeb-8193-e31731bfab65
 # ╠═e99563b8-2827-4e0a-b7c5-e812fef7c6c5
 # ╠═c434086a-d9e3-436b-91ad-a7ddef56622d
+# ╠═d5fc459c-2c34-4f2f-a7ab-bce5e196ce1e
+# ╠═1a21ace6-b448-49d8-b544-97e8c0194723
+# ╠═eac9bbe6-29c4-402b-84af-c88fb826a782
+# ╠═7674a28f-7bf2-426a-817f-68f83e6425d7

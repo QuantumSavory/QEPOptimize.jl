@@ -53,9 +53,8 @@ end
 end
 
 @testitem "affectedqubits" begin
-    using QEPOptimize: affectedqubits
+    using BPGates: affectedqubits
     using BPGates
-
     # Test with CNOTPerm
     op = BPGates.CNOTPerm(2, 1, 2, 4)
     qubits = affectedqubits(op)
@@ -82,6 +81,21 @@ end
     @test qubits == (2, 4)
     
 end
+
+# @testitem "T1T2 Noise obeys noise equality" begin
+#     using QEPOptimize: thermal_relaxation_error_rate
+#     t1 = 1;t2 = 1;gate_time = 1
+#     λ₁,λ₂ = thermal_relaxation_error_rate(t1,t2,gate_time)
+#     doubleλ₁,doubleλ₂ = thermal_relaxation_error_rate(t1,t2,gate_time * 2)
+
+#     # Must obey lambda_2x = 2*lambda_x*(1-lambda_x)
+#     # λ₁
+#     @test doubleλ₁ == 2 * λ₁ * (1 - λ₁)
+
+#     # λ₂
+#     @test doubleλ₂ == 2 * λ₂ * (1 - λ₂)
+
+# end
 
 @testitem "Add T1T2 noise" setup=[noise_setup] begin
     using QEPOptimize: T1T2Noise, noisify_circuit
@@ -111,24 +125,43 @@ end
 
 end
 
-@testitem "is_only_noise" begin
-    # Check if the function 'is_only_noise' correctly identifies noise operations, and does not identify non-noise operations as noise.
-    using QEPOptimize: is_only_noise
+@testitem "op_times for T1T2 Noise" begin
+    using QEPOptimize: T1T2Noise,op_time
     using BPGates
+    
+    # Test custom op_times
+    times = Dict(
+        BellMeasure => 1.0,
+        CNOTPerm => 2.0,
+        PauliNoiseBellGate => 3.0,
+        NoisyBellMeasureNoisyReset => 4.0
+    )
+    
     # Noise ops: T1NoiseOp, T2NoiseOp, PauliNoiseOp
     # Non-noise ops: CNOTPerm, BellMeasure, NoisyBellMeasureNoisyReset, PauliNoiseBellGate
     # Noise:
-    @test is_only_noise(BPGates.T1NoiseOp(1, 0.1)) == true
-    @test is_only_noise(BPGates.T2NoiseOp(1, 0.1)) == true
-    @test is_only_noise(BPGates.PauliNoiseOp(1, 0.1,0.1,0.1)) == true
-    # Non-noise:
-    @test is_only_noise(BPGates.CNOTPerm(1, 2, 3, 4)) == false
-    @test is_only_noise(BPGates.BellMeasure(1, 2)) == false
-    @test is_only_noise(BPGates.NoisyBellMeasureNoisyReset(BPGates.BellMeasure(1, 2), 0.1, 0.01, 0.01, 0.01)) == false
-    @test is_only_noise(BPGates.PauliNoiseBellGate(BPGates.CNOTPerm(1, 2, 3, 4), 0.1, 0.01, 0.01)) == false
-    # Test with a custom operation that is not noise
-    struct CustomOp end
-    @test is_only_noise(CustomOp()) == false
+    @test op_time(times, BPGates.T1NoiseOp(1, 0.1)) == 0.0
+    @test op_time(times, BPGates.T2NoiseOp(1, 0.1)) == 0.0
+    @test op_time(times, BPGates.PauliNoiseOp(1, 0.1, 0.1, 0.1)) == 0.0
+    @test op_time(times, BPGates.CNOTPerm(1, 2, 3, 4)) == 2.0
+    @test op_time(times, BPGates.BellMeasure(1, 2)) == 1.0
+    @test op_time(times, BPGates.NoisyBellMeasureNoisyReset(BPGates.BellMeasure(1, 2), 0.1, 0.01, 0.01, 0.01)) == 4.0
+    @test op_time(times, BPGates.PauliNoiseBellGate(BPGates.CNOTPerm(1, 2, 3, 4), 0.1, 0.01, 0.01)) == 3.0
 
+
+    # Test default op_times
+    default_times = T1T2Noise(1.0, 2.0)
+    
+    # Check default times for different operations
+    @test op_time(default_times.op_times, BPGates.CNOTPerm(1, 2, 3, 4)) == 1.0
+    @test op_time(default_times.op_times, BPGates.BellMeasure(1, 2)) == 1.0
+    @test op_time(default_times.op_times, BPGates.NoisyBellMeasureNoisyReset(BPGates.BellMeasure(1, 2), 0.1, 0.01, 0.01, 0.01)) == 1.0
+    @test op_time(default_times.op_times, BPGates.PauliNoiseBellGate(BPGates.CNOTPerm(1, 2, 3, 4), 0.1, 0.01, 0.01)) == 1.0
+    
+    # Noise operations should have zero time by default
+    @test op_time(default_times.op_times, BPGates.T1NoiseOp(1, 0.1)) == 0.0
+    @test op_time(default_times.op_times, BPGates.T2NoiseOp(1, 0.1)) == 0.0
+    @test op_time(default_times.op_times, BPGates.PauliNoiseOp(1, 0.1, 0.1, 0.1)) == 0.0
 
 end
+    

@@ -1,5 +1,5 @@
 using QEPOptimize
-using QEPOptimize: initialize_pop!, step!, NetworkFidelity # TODO export these
+using QEPOptimize: initialize_pop!, step!, NetworkFidelity, MeasurementError, T1T2Noise # TODO export these
 using BPGates: PauliNoise # TODO re-export from QEPOptimize
 
 

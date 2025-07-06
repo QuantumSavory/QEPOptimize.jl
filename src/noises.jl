@@ -167,11 +167,11 @@ end
 # These have been moved to BPGates.jl, and will be deleted after finishing the pull request open at https://github.com/QuantumSavory/BPGates.jl/pull/31
 # if not using that version of BPGates, these will need to be uncommented.
 # retrieve qubits involved in a gate
-# affectedqubits(gate::PauliNoiseBellGate) = (gate.g.idx1, gate.g.idx2)
-# affectedqubits(gate::NoisyBellMeasureNoisyReset) = (gate.m.sidx,)
-# affectedqubits(gate::BellMeasure) = (gate.sidx,)
-# affectedqubits(gate::CNOTPerm) = (gate.idx1, gate.idx2)
-# affectedqubits(gate)= ()  # Default case for gates that do not involve qubits
+affectedqubits(gate::PauliNoiseBellGate) = (gate.g.idx1, gate.g.idx2)
+affectedqubits(gate::NoisyBellMeasureNoisyReset) = (gate.m.sidx,)
+affectedqubits(gate::BellMeasure) = (gate.sidx,)
+affectedqubits(gate::CNOTPerm) = (gate.idx1, gate.idx2)
+affectedqubits(gate)= ()  # Default case for gates that do not involve qubits
 
 # TODO more types of noise should be implemented
     # gate_fidelity would turn CNOTPerm gates into gates wrapped into noise

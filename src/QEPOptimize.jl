@@ -1,7 +1,7 @@
 module QEPOptimize
 
 using BPGates
-using BPGates: mctrajectory!, continue_stat, PauliNoise, T1NoiseOp, T2NoiseOp, affectedqubits # TODO these should be exported by default
+using BPGates: mctrajectory!, continue_stat, PauliNoise, T1NoiseOp, T2NoiseOp # TODO these should be exported by default
 
 using Makie
 

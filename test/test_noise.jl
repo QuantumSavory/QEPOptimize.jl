@@ -97,6 +97,48 @@ end
 
 # end
 
+# Fails with t1 low, ie 1, math for t1 is currently broken, only use >100 for roughly correct t1 noise. T2 is fine.
+@testitem "two 1-sec T1 T2 noise has same results as one 2-sec T1T2 noise" begin
+    using QEPOptimize:T1T2Noise, thermal_relaxation_error_rate,Individual,calculate_performance!
+    using BPGates: T1NoiseOp, T2NoiseOp
+
+    t1 = 1000;t2 = 1;gate_time = 1
+    noise_model = T1T2Noise(1,1)
+    one_sec_λ₁, one_sec_λ₂ = thermal_relaxation_error_rate(t1, t2, gate_time)
+    two_noise_ops_T1 = Individual()
+
+    two_noise_ops_T1.ops = [T1NoiseOp(1,one_sec_λ₁),T1NoiseOp(1,one_sec_λ₁)]
+
+    two_sec_λ₁, two_sec_λ₂ = thermal_relaxation_error_rate(t1, t2, gate_time*2)
+    one_noise_op_T1 = Individual()
+    one_noise_op_T1.ops = [T1NoiseOp(1,two_sec_λ₁)]
+
+    sims = 100000
+    one_sec_T1_performance = calculate_performance!(two_noise_ops_T1, ;num_simulations=sims,noises=[])
+
+    two_sec_T1_performance = calculate_performance!(one_noise_op_T1, ;num_simulations=sims,noises=[])
+    tolerance = 5/sqrt(sims)
+    @test isapprox(one_sec_T1_performance.logical_qubit_fidelity, two_sec_T1_performance.logical_qubit_fidelity;atol=tolerance)
+    
+
+    # T2
+    two_noise_ops_T2 = Individual()
+
+    two_noise_ops_T2.ops = [T2NoiseOp(1,one_sec_λ₂),T2NoiseOp(1,one_sec_λ₂)]
+
+    one_noise_op_T2 = Individual()
+    one_noise_op_T2.ops = [T2NoiseOp(1,two_sec_λ₂)]
+
+    one_sec_T2_performance = calculate_performance!(two_noise_ops_T2, ;num_simulations=sims,noises=[])
+
+    two_sec_T2_performance = calculate_performance!(one_noise_op_T2, ;num_simulations=sims,noises=[])
+
+    @test isapprox(one_sec_T2_performance.logical_qubit_fidelity, two_sec_T2_performance.logical_qubit_fidelity;atol=tolerance)
+    
+
+end
+
+
 @testitem "Add T1T2 noise" setup=[noise_setup] begin
     using QEPOptimize: T1T2Noise, noisify_circuit
     using BPGates

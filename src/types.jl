@@ -1,5 +1,6 @@
 # TODO (low priority) this would be a great place to use an Enum or, even better, an algebraic data type (ADT)
 const HISTORIES = [:manual, :survivor, :random, :child, :drop, :gain, :swap, :opsmutate]
+const EVOLUTION_METRICS =[:logical_qubit_fidelity, :purified_pairs_fidelity, :average_marginal_fidelity]
 
 "A convenient structure to store various purification performance metrics."
 struct Performance

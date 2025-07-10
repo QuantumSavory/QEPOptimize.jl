@@ -19,6 +19,7 @@ function step!(
     p_drop=0.1,
     p_mutate=0.1,
     p_gain=0.1,
+    evolution_metric=:logical_qubit_fidelity
 )
     # Mark existing individuals as survivors
     # Survivors ensure that some individuals are carried over unchanged, maintaining good solutions
@@ -36,7 +37,8 @@ function step!(
         num_simulations,
         purified_pairs,
         number_registers, # TODO (low priority) this should be by-default derived from `indiv`
-        noises=[NetworkFidelity(0.9)] # TODO configurable noise
+        noises=[NetworkFidelity(0.9)], # TODO configurable noise
+        evolution_metric=evolution_metric
     )
     cull!(population, pop_size)
 end
@@ -138,7 +140,8 @@ function simulate_and_sort!(
     purified_pairs::Int=1,
     number_registers::Int=2, # TODO (low priority) this should be by-default derived from `indiv`
     code_distance::Int=1,
-    noises=[NetworkFidelity(0.9)]
+    noises=[NetworkFidelity(0.9)],
+    evolution_metric=:logical_qubit_fidelity
 )
     # calculate and update each individual's performance
     function update!(indiv)
@@ -148,9 +151,10 @@ function simulate_and_sort!(
             number_registers,
             code_distance,
             noises)
-        indiv.fitness = indiv.performance.purified_pairs_fidelity # TODO make it possible to select the type of fitness to evaluate
+        
+        indiv.fitness = getfield(indiv.performance, evolution_metric)
     end
-
+    
     # Parallel processing for performance calculations. Max threads will be set by the threads specified when running julia. ex) julia -t 16
     max_threads::Int = Threads.nthreads()
 
@@ -177,7 +181,8 @@ function initialize_pop!(
     num_simulations::Int=100,
     purified_pairs::Int=1,
     code_distance::Int=1,
-    noises=[NetworkFidelity(0.9)]
+    noises=[NetworkFidelity(0.9)],
+    evolution_metric=:logical_qubit_fidelity
 )
     valid_pairs=1:number_registers # TODO (low priority) decouple valid_pairs from number_registers
 
@@ -197,7 +202,8 @@ function initialize_pop!(
         purified_pairs,
         number_registers,
         code_distance,
-        noises
+        noises,
+        evolution_metric
     )
     cull!(population,pop_size)
 end

@@ -48,6 +48,12 @@ function multiple_steps_with_history!(
     step_callback=()->nothing,
     step_config... # same as step!
 )
+    # Edge case: current population not the same size as requested pop, likely to happen in the pluto notebook where pop_size can be changing alot
+    if size(population.individuals)[1] != step_config[:pop_size]
+        @info "Population size changed, resizing population..."
+        step!(population; step_config...) # running a step should add to pop if needed, or remove when calling cull!()
+    end
+
     fitness_history = Matrix{Float64}(undef, steps+1, step_config[:pop_size])
     fitness_history[1, :] = [i.fitness for i in population.individuals]
     transition_counts = []
@@ -165,12 +171,32 @@ end
 
 "Reduce the population size to the target `population_size` (assumes pop is already sorted)"
 function cull!(population::Population, population_size::Int)
-    population.individuals = population.individuals[1:population_size]
+    if size(population.individuals)[1] < population_size
+        @warn "Culling population to $population_size but it only has $(size(population.individuals)[1])"
+    elseif size(population.individuals)[1] == population_size
+        return
+    else
+        population.individuals = population.individuals[1:population_size]
+    end
 end
 
 
 """
 Initialize a population of quantum circuits, sort, and cull.
+
+    initialize_pop!(
+    population::Population;
+    start_ops::Int=10,
+    start_pop_size::Int=1000,
+    number_registers::Int=2,
+    pop_size::Int=100,
+    num_simulations::Int=100,
+    purified_pairs::Int=1,
+    code_distance::Int=1,
+    noises=[NetworkFidelity(0.9)],
+    evolution_metric=:logical_qubit_fidelity
+)
+
 """
 function initialize_pop!(
     population::Population;
@@ -188,15 +214,21 @@ function initialize_pop!(
 
     number_registers >= 2 || throw(ArgumentError("number_registers must be >= 2"))
 
-    for _ in 1:start_pop_size
-        indiv = Individual(:random)
-        for _ in 1:start_ops
-            push!(indiv.ops, rand_op(valid_pairs))
-        end
-        push!(population.individuals, indiv)
-    end
+    # To help with loading bars with ProgressLogging
+    @progress for f in (()-> 
+    begin
 
-    simulate_and_sort!(
+    # create individuals
+        for _ in 1:start_pop_size
+            indiv = Individual(:random)
+            for _ in 1:start_ops
+                push!(indiv.ops, rand_op(valid_pairs))
+            end
+            push!(population.individuals, indiv)
+        end
+    end,
+
+    () -> simulate_and_sort!(
         population;
         num_simulations,
         purified_pairs,
@@ -204,6 +236,10 @@ function initialize_pop!(
         code_distance,
         noises,
         evolution_metric
-    )
-    cull!(population,pop_size)
+    ),
+
+    () -> cull!(population,pop_size))
+
+    # run each function with progresslogging
+    f() end
 end

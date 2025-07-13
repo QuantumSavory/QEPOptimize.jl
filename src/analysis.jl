@@ -69,7 +69,14 @@ function plot_fitness_history(
     return fig
 end
 
-### Output to QASM 
+### Output to QASM notes
+# Do operations on only one of the register in the pair 'alice only'
+# Engantlement : custom op. 'generate ent.' Leave for the user to define
+# Measurement : do measurement, and do nothing with result. After each 'non-final' measurement, bring entanglement back (do custom op again)
+# Sparse gate, use custom op 'black box'
+# Send msg for Sparsegates, stabilizer tab output
+
+##
 # TODO: deal with SparseGates
 # TODO: Implement BellMeasure, decide to "throw away" bad pairs or not. Not sure if this should be implemented, since QASM computation is split into sections of classical and quantum, so any classical checking will stop the quantum computation and could lead to wasting bell pairs.
     # // measure pair... (measure q[1] -> c[1])

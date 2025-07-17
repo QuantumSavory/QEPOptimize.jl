@@ -1,7 +1,8 @@
 module QEPOptimize
 
 using BPGates
-using BPGates: mctrajectory!, continue_stat, PauliNoise, BellMeasure, CNOTPerm, toQCcircuit 
+using BPGates: mctrajectory!, continue_stat, PauliNoise, BellMeasure, CNOTPerm, toQCcircuit, affectedqubits
+# import BPGates.affectedqubits
 # TODO (mctrajectory!, continue_stat, PauliNoise) should be exported by default
 
 

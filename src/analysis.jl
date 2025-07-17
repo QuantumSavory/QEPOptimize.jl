@@ -123,23 +123,120 @@ to_qasm(op::sMY) = "sdg q[$(op.qubit)];\nh q[$(op.qubit)];\nmeasure q[$(op.qubit
 # Measurement in Z basis (normal measure)
 to_qasm(op::sMZ) = "measure q[$(op.qubit)] -> c[$(op.bit)];\n"
 
-# CNOT permutation 
-function to_qasm(op::CNOTPerm)
-    # Convert BPGates.CNOTPerm into Vector{QuantumClifford.AbstractCliffordOperator}
-    circ = toQCcircuit(op)
-    # Then apply to_qasm() on each gate in vector, concat results
-    return reduce(*,[to_qasm(QC_op) for QC_op in circ])
+""" 
+Equivalent section from BPGates: 
+
+const h = tHadamard
+const p = tPhase
+const hp = h*p
+const ph = p*h
+const good_perm_qc = ( # From the appendix of Optimized Entanglement Purification, but be careful with index notation being different
+    (tId1,tId1), # TODO switch to symbolic gates
+    (h*ph*ph,h*hp*hp*hp*hp),
+    (h,h),
+    (ph*ph,hp*hp*hp*hp),
+    (ph,hp*hp),
+    (h*ph,p*hp)
+)"""
+# translate this to qasm:
+h(q::Int) = "h q[$q];\n"
+p(q::Int) = "s q[$q];\n" 
+hp(q::Int) = h(q) * p(q)
+ph(q::Int) = p(q) * h(q)
+id1(q::Int) = "id q[$q];\n"
+"""Apply the two given functions in order, concat their outputs. Using the × unicode to avoid messing with Base module '*' functions.
+
+So now we can say 
+julia> (h×h)(1)
+"h q[1];\nh q[1];\n"
+"""
+×(a,b) = (q::Int) -> a(q) * b(q)
+(q::Int) -> a(q) * b(q)
+const good_perm_qasm = (
+    (id1,id1),
+    (h×ph×ph,h×hp×hp×hp×hp),
+    (h,h),
+    (ph×ph,hp×hp×hp×hp),
+    (ph,hp×hp),
+    (h×ph,p×hp)
+)
+
+"""
+    to_qasm(gate::CNOTPerm)
+
+This is from BPGates:
+    function toQCcircuit(gate::CNOTPerm)
+    return [
+        SparseGate(good_perm_qc[gate.single1][1], (gate.idx1*2-1,)),
+        SparseGate(good_perm_qc[gate.single1][2], (gate.idx1*2,)),
+        SparseGate(good_perm_qc[gate.single2][1], (gate.idx2*2-1,)),
+        SparseGate(good_perm_qc[gate.single2][2], (gate.idx2*2,)),
+        sCNOT(gate.idx1*2-1, gate.idx2*2-1),
+        sCNOT(gate.idx1*2, gate.idx2*2)
+    ]       
+
+Instead of doing: BPGates.CNOTPerm -> SparseGate -> QASM,
+and having to deal with sparsegate intepretation, we do this:
+BPGates.CNOTPerm -> QASM, which means we will skip using toQCcircuit. 
+We can hack this by making our own 'good_perm_qc' (good_perm_qasm) the same as how it is done in BPGates, except swapping out the gate definitions (h, p, hp, ph...) with the same QASM ones.
+"""
+function to_qasm(gate::CNOTPerm)
+    return reduce(*,[
+        good_perm_qasm[gate.single1][1](gate.idx1*2-1),
+        good_perm_qasm[gate.single1][2](gate.idx1*2),
+        good_perm_qasm[gate.single2][1](gate.idx2*2-1),
+        good_perm_qasm[gate.single2][2](gate.idx2*2),
+        to_qasm(sCNOT(gate.idx1*2-1, gate.idx2*2-1)),
+        to_qasm(sCNOT(gate.idx1*2, gate.idx2*2))
+    ])
 end
 
-# SparseGates from CNOTPerm TODO
-function to_qasm(op::SparseGate{Tableau{Vector{UInt8}, Matrix{UInt64}}})
-    return "$(op) Not implemented\n"
+"""
+    to_qasm(gate::BellMeasure)
+
+BellMeasure to qasm function, similar method to CNOTPerm
+
+Equivalent function from BPGates to QuantumClifford:
+function toQCcircuit(g::BellMeasure)
+    meas = (sMX, sMY, sMZ)[g.midx]
+    return [
+        BellMeasurement([meas(g.sidx*2-1),meas(g.sidx*2)], g.midx==2)
+        Reset(S"XX ZZ", [g.sidx*2-1,g.sidx*2])
+    ]
+end
+
+Since we do not want to slow down quantum computation at all, (while waiting for classical computation) we will just perform a reset on/in the specified basis and qubit, and continue. We are not worrying about parity or comparing the results of the measurement.
+
+"""
+function to_qasm(gate::BellMeasure;re_entangle=nothing)
+    meas = (sMX, sMY, sMZ)[gate.midx]
+
+    qasm = reduce(*,[
+        to_qasm(meas(gate.sidx*2-1)),
+        to_qasm(meas(gate.sidx*2))
+    ])
+    if !isnothing(re_entangle) 
+        qasm *= re_entangle(gate.sidx)
+    end
+    return qasm
 end
 
 # Normal CNOT
 to_qasm(op::sCNOT) = "cx q[$(op.q1)], q[$(op.q2)]\n"
 
-# Convert Purification circuit to OPENQASM 2.0. Need to supply the circuit (vector/list of ops), total register amount, purified pair amount, and optionally ;comments=false to turn off comments.
+# To keep track of wether or not to re-entangle after some operations 
+should_re_entangle_after(op) = false
+should_re_entangle_after(op::BellMeasure) = true # only after measurement 
+# others ?
+
+# type piracy to fix this?
+# affectedqubits(g::BellMeasure) = (g.sidx,)
+
+"""
+    to_qasm(circ, registers::Int,purified_pairs::Int;comments=true,entanglement=define_Φ⁺_qasm)
+
+Convert Purification circuit to OPENQASM 2.0. Need to supply the circuit (vector/list of ops), total register amount, purified pair amount, and optionally ;comments=false to turn off comments.
+"""
 function to_qasm(circ, registers::Int,purified_pairs::Int;comments=true,entanglement=define_Φ⁺_qasm)
     # Should be some pure pairs, and need at least as many regs as pure pairs.
     @assert purified_pairs > 0 && purified_pairs <= registers
@@ -147,43 +244,67 @@ function to_qasm(circ, registers::Int,purified_pairs::Int;comments=true,entangle
     # Get Header
     qasm_str = "OPENQASM 2.0;\ninclude \"qelib1.inc\";\n" # TODO: move to constant?
 
+    # helper method to simply syntax: 'append to string'
+    add(s::String) = qasm_str *= s
+
     # registers
-    qasm_str *= "qreg q[$(registers*2)];creg c[$(registers*2)];\n\n"
+    add("qreg q[$(registers*2)];creg c[$(registers*2)];\n\n")
 
     # Define entanglement (defines the 'entangle' operation to be used to make pairs)
-    qasm_str *= entanglement()
+    add(entanglement())
 
     # Create bell pairs
-    if comments
-        qasm_str *= "// Creating Bell pairs\n"
-    end
+    comments && add("// Creating Bell pairs\n")
     for i in 1:registers
         if comments
             # Mark purified pairs
-            if i <= purified_pairs
-                qasm_str *= "// Purified pair $(i)\n"
-            else
-                qasm_str *= "// Non-purified pair $(i)\n"
-            end
+            i <= purified_pairs ? add("// Purified pair $(i)\n") : add("// Non-purified pair $(i)\n")
         end
-        qasm_str *= entangle_qasm(2i-2, 2i-1) # Create Bell pairs
+        add(entangle_qasm(2i-2, 2i-1)) # Create Bell pairs
     end
 
-    # Add operations
-    for (i,op) in enumerate(circ)
+    # Add operations. Keep track of the operations, since we need to 're-entangle' physical qubits sometimes after measurement, but not at the end of the circuit.
+    # ops_per_pair_left = zeros(registers) # each index (1,2,3..) is the PAIR index, *not* the actual qasm register index!
+    # # populate the 'ops_left' array
+    # for op in circ
+    #     for pair in affectedqubits(op)
+    #         @assert pair <= registers # out of bounds check
+    #         ops_per_pair_left[pair] += 1
+    #     end
+    # end
+    for (i,op) in enumerate(circ) # Now add the ops to the qasm output
         # Add some space inbetween for readability
-        qasm_str *= "\n"
-        if comments 
-            qasm_str *= "// Operation $(i): $(op)\n"
+        add("\n")
+        comments && add("// Operation $(i): $(op)\n")
+        # this is a hack, i need to fix this (issue around affectedqubits() )
+        if isa(op,BellMeasure)
+            add(to_qasm(op;re_entangle=(pair)->entangle_qasm(2*pair-2, 2*pair-1)))
+        else
+            add(to_qasm(op))
         end
-        qasm_str *= to_qasm(op)
+        # decriment the pair_left array
+        # currently_affectedqubits = affectedqubits(op)
+        # for pair in currently_affectedqubits
+        #     ops_per_pair_left[pair] -= 1
+        # end   
+        
+        # Decide if we need to 're entangle' 
+        # only do so if:
+        # if should_re_entangle_after(op) # this function is dispatched as true for this type of operation
+        #     for pair in currently_affectedqubits # for all of the relevant qubits,
+        #         # if this qubit is used in the future (ops left is not 0)
+        #         # then, finally, re-entangle.
+        #         ops_per_pair_left[pair] != 0 && add(entangle_qasm(2*pair-2, 2*pair-1)) # TODO: write unit tests for the edge cases of this (ops after measurement, no ops after measurement, multi-ops after measurement, multi-measurement with ops after/none after etc...)
+        #     end
+        # end
+            
     end
 
     # pairs are now 'purified' so remind which ones. The logic results in one pair showing (0,1), and multiple pairs showing [(0,1),(2,3)...]
-    qasm_str *= "\n// Entangled, purified pairs: $(purified_pairs == 1 ? (0, 1) : [(2i-2, 2i-1) for i in 1:purified_pairs])\n"
-    if comments
-        qasm_str *= "// Generated by QuantumSavory/QEPOptimize.jl\n"
-    end
+    add("\n// Entangled, purified pairs: $(purified_pairs == 1 ? (0, 1) : [(2i-2, 2i-1) for i in 1:purified_pairs])\n")
+    
+    comments && add("// Generated by QuantumSavory/QEPOptimize.jl\n")
+    
     return qasm_str
 end
 
@@ -192,26 +313,36 @@ to_qasm(op::PauliNoise) = ""
 
 ### Convert to Stabilizer view TODO 
 # Very rough beginning draft of this function 
-function to_stabilizer(circ,registers)
+function to_stabilizer(circ,registers;show_steps=false)
     state = BellState(registers)
     stab = MixedDestabilizer(state)
-    output = string(stab)
+    output = ""
+    if show_steps
+        output *= string(stab)
+    end
     for op in circ
         # Get Clifford version of op
         for cliff_op in toQCcircuit(op)
-                # Apply op to stabilizer
-                if isa(cliff_op,BellMeasurement)
-                    for m_op in cliff_op.measurements
-                        apply!(stab,m_op)
-                    end
-                # TODO add more ops here/switch to multiple dispatch on to_stabilizer() calls
-                # ie, define to_stabilizer function for any possible op, then combine results of calls
-                else
-                    apply!(stab,cliff_op)
+            # Apply op to stabilizer
+            if isa(cliff_op,BellMeasurement)
+                for m_op in cliff_op.measurements
+                    apply!(stab,m_op)
                 end
+            # TODO add more ops here/switch to multiple dispatch on to_stabilizer() calls
+            # ie, define to_stabilizer function for any possible op, then combine results of calls
+            else
+                apply!(stab,cliff_op)
+            end
+            # if we are showing steps:
+            if show_steps
                 # Append output
                 output *= "\n$(cliff_op)\n$(string(stab))"
+            end
         end
     end
-    return output
+    if show_steps 
+        return output
+    else
+        return string(stab)
+    end
 end

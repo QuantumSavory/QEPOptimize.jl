@@ -74,6 +74,8 @@ md"""
 
 * Maximum Operations: $(Child("max_ops", PlutoUI.Slider(10:5:30, default=15, show_value=true)))
 
+* Code distance: $(Child("code_distance", PlutoUI.Slider(1:1:6, default=1, show_value=true)))
+
 ### Error Parameters
 
 * Network fidelity: $(Child( "network_fidelity", PlutoUI.Slider(0.:0.002:0.3, default=0.1, show_value=true)))
@@ -86,7 +88,7 @@ md"""
 
 ## Simulation Parameters
 
-* Number of Simulations: $(Child( "num_simulations",PlutoUI.Slider(100:100:10000, default=1000, show_value=true)))
+* Number of Simulations: $(Child( "num_simulations",PlutoUI.Scrubbable(100:100:500000, default=1000)))
 
 * Population Size: $( Child("pop_size", PlutoUI.Slider(10:10:100, default=20, show_value=true)))
 
@@ -127,7 +129,7 @@ begin
 			num_simulations=c.num_simulations,
 		    number_registers=c.number_registers,
 		    purified_pairs=c.purified_pairs,
-		    code_distance=1, # For logical qubit fidelity
+		    code_distance=c.code_distance, # For logical qubit fidelity
 		    pop_size=c.pop_size,
 			noises=[NetworkFidelity(c.network_fidelity), PauliNoise(c.paulix, c.pauliy, c.pauliz)],
 		)
@@ -240,7 +242,6 @@ begin
 		Operations on the best circuit:
 		"""
 	else
-		md"Hidden"
 	end
 end
 
@@ -299,18 +300,21 @@ md"
 #### Stabilizer Symbols
 "
 
+# ╔═╡ d5173d32-50ae-47f8-9043-c7cd76c611bb
+md"Show each step of the stabilizer: $(@bind show_each_step PlutoUI.CheckBox())"
+
 # ╔═╡ 1a21ace6-b448-49d8-b544-97e8c0194723
-:stab_symbols in enabled_output && print(to_stabilizer(best_circuit.ops,c.number_registers))
+:stab_symbols in enabled_output && print(to_stabilizer(best_circuit.ops,c.number_registers;show_steps=show_each_step))
 
 
 # ╔═╡ Cell order:
 # ╟─8fc5cb18-70cc-4846-a62b-4cda69df12b0
 # ╠═353e15de-0a9b-4107-a265-28953e1deee2
-# ╠═610c0135-3a8e-4676-aa5f-9ca76546dd98
-# ╠═6419143d-dc3a-47f0-8791-004e57b911c1
+# ╟─610c0135-3a8e-4676-aa5f-9ca76546dd98
+# ╟─6419143d-dc3a-47f0-8791-004e57b911c1
 # ╟─a892e297-7223-4d1a-b772-5f4ca5c64339
 # ╟─dad1728c-c341-44cc-88e6-d26ca1815a30
-# ╠═cef70317-fc58-42b3-987b-a454064f0113
+# ╟─cef70317-fc58-42b3-987b-a454064f0113
 # ╟─3d17bc74-fa91-410c-b060-b15eae7a564b
 # ╟─c09c7bb8-1d08-45da-81ca-0cf1d1985b91
 # ╟─451be68d-b0bb-4b1b-b7fa-5c39618f95de
@@ -328,4 +332,5 @@ md"
 # ╟─e8b444fb-f300-4997-8552-c88e6bd6495c
 # ╟─d5fc459c-2c34-4f2f-a7ab-bce5e196ce1e
 # ╟─9974565a-dc10-4069-994d-4775629f4cf5
+# ╟─d5173d32-50ae-47f8-9043-c7cd76c611bb
 # ╟─1a21ace6-b448-49d8-b544-97e8c0194723

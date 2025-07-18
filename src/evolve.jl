@@ -44,35 +44,58 @@ function step!(
 end
 
 function multiple_steps_with_history!(
-    population::Population, steps;
+    population::Population, steps;   # Same as step, but it needs to be specified to be used in this function
     step_callback=()->nothing,
-    step_config... # same as step!
+    max_ops::Int=5,
+    number_registers::Int=2,
+    purified_pairs::Int=1,
+    num_simulations::Int=100,
+    pop_size::Int=100,
+    code_distance::Int=1,
+    noises=[NetworkFidelity(0.9)],
+    new_mutants::Int=10,
+    p_drop=0.1,
+    p_mutate=0.1,
+    p_gain=0.1,
+    evolution_metric=:logical_qubit_fidelity
 )
     # Edge case: current population not the same size as requested pop, likely to happen in the pluto notebook where pop_size can be changing alot
-    if length(population.individuals) != step_config[:pop_size]
+    if length(population.individuals) != pop_size
         @info "Population size changed, resizing population..."
         # This is a failure mode, there have been 2 edge cases so far that fail from this sort of issue: bad population size
         # make sure that the config is correct (avoid infinite loops)
-        @assert step_config[:new_mutants] >= 1
+        @assert new_mutants >= 1
         # if the population is less than what it needs to be:
-        while length(population.individuals) < step_config[:pop_size]
+        while length(population.individuals) < pop_size
             @info "Population size too low, increasing" # Include a message to make it clear if we get stuck in this loop
             # Add until there are enough 
-            add_mutations!(population.individuals; step_config.max_ops, step_config.new_mutants, valid_pairs=1:step_config.number_registers) 
+            add_mutations!(population.individuals; max_ops, new_mutants, valid_pairs=1:number_registers) 
         end
         # And if we have too much (maybe from the loop above), cull the population to the correct amount
-        cull!(population, step_config[:pop_size])
+        cull!(population, pop_size)
     end
 
     # This is to confirm that the if statement above worked
-    @assert length(population.individuals) == step_config[:pop_size]
+    @assert length(population.individuals) == pop_size
 
-    fitness_history = Matrix{Float64}(undef, steps+1, step_config[:pop_size])
+    fitness_history = Matrix{Float64}(undef, steps+1, pop_size)
     fitness_history[1, :] = [i.fitness for i in population.individuals]
     transition_counts = []
 
     @progress for i in 1:steps
-        step!(population; step_config...)
+        step!(population; max_ops,
+            number_registers,
+            purified_pairs,
+            num_simulations,
+            pop_size,
+            code_distance,
+            noises,
+            new_mutants,
+            p_drop,
+            p_mutate,
+            p_gain,
+            evolution_metric
+        )
         fitness_history[i+1,:] = [i.fitness for i in population.individuals]
         push!(transition_counts, counter([i.history for i in population.individuals]))
         step_callback()

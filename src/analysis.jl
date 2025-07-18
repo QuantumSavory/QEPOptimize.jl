@@ -294,8 +294,11 @@ end
 # ignore any noise operations (which should not be in the circuit anyway, but might be) TODO: convert noisy ops to non-noisy ops
 to_qasm(op::PauliNoise) = ""
 
-### Convert to Stabilizer view TODO 
-# Very rough beginning draft of this function 
+"""
+    to_stabilizer(circ,registers;show_steps=false)
+
+    Apply circuit to a QuantumClifford MixedDestabilizer. Optionally, show each step as the operations are applied 
+"""
 function to_stabilizer(circ,registers;show_steps=false)
     state = BellState(registers)
     stab = MixedDestabilizer(state)

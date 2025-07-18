@@ -49,10 +49,23 @@ function multiple_steps_with_history!(
     step_config... # same as step!
 )
     # Edge case: current population not the same size as requested pop, likely to happen in the pluto notebook where pop_size can be changing alot
-    if size(population.individuals)[1] != step_config[:pop_size]
+    if length(population.individuals) != step_config[:pop_size]
         @info "Population size changed, resizing population..."
-        step!(population; step_config...) # running a step should add to pop if needed, or remove when calling cull!()
+        # This is a failure mode, there have been 2 edge cases so far that fail from this sort of issue: bad population size
+        # make sure that the config is correct (avoid infinite loops)
+        @assert step_config[:new_mutants] >= 1
+        # if the population is less than what it needs to be:
+        while length(population.individuals) < step_config[:pop_size]
+            @info "Population size too low, increasing" # Include a message to make it clear if we get stuck in this loop
+            # Add until there are enough 
+            add_mutations!(population.individuals; step_config.max_ops, step_config.new_mutants, valid_pairs=1:step_config.number_registers) 
+        end
+        # And if we have too much (maybe from the loop above), cull the population to the correct amount
+        cull!(population, step_config[:pop_size])
     end
+
+    # This is to confirm that the if statement above worked
+    @assert length(population.individuals) == step_config[:pop_size]
 
     fitness_history = Matrix{Float64}(undef, steps+1, step_config[:pop_size])
     fitness_history[1, :] = [i.fitness for i in population.individuals]

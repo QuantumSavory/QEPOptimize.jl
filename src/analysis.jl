@@ -71,29 +71,15 @@ end
 
 ### Output to QASM notes
 # Do operations on only one of the register in the pair 'alice only'
-# Engantlement : custom op. 'generate ent.' Leave for the user to define
+# Entanglement : custom op. 'generate ent.' Leave for the user to define
 # Measurement : do measurement, and do nothing with result. After each 'non-final' measurement, bring entanglement back (do custom op again)
 # Sparse gate, use custom op 'black box'
 # Send msg for Sparsegates, stabilizer tab output
 
-##
-# TODO: deal with SparseGates
-# TODO: Implement BellMeasure, decide to "throw away" bad pairs or not. Not sure if this should be implemented, since QASM computation is split into sections of classical and quantum, so any classical checking will stop the quantum computation and could lead to wasting bell pairs.
-    # // measure pair... (measure q[1] -> c[1])
-    # // set up polarity of 'if' to be based on desired parity of BellMeasure 
-    # // 'throw away operation, eg, reset and make a new pair
-    # gate throw_away(index1,index2) {
-    #   reset q[index1];
-    #   reset q[index2];
-    #   h q[index1];
-    #   cx q[index1],q[index2];
-    # }
-    # if (c[1]==1) throw_away(0,1); // ?
 
-# TODO: should Barriers be used? 
 # TODO: testing with local QASM simulator
 
-## Preperation of Bell pairs
+## Preparation of Bell pairs
 # "create entanglement" default  
 define_Φ⁺_qasm() = "// Create Psi plus Bell pair\ngate entangle a,b {\n\th a;\n\tcx a,b;\n}\n\n"
 entangle_qasm(q1::Int,q2::Int) = "entangle q[$(q1)],q[$(q2)];\n" 
@@ -151,7 +137,7 @@ julia> (h×h)(1)
 "h q[1];\nh q[1];\n"
 """
 ×(a,b) = (q::Int) -> a(q) * b(q)
-(q::Int) -> a(q) * b(q)
+
 const good_perm_qasm = (
     (id1,id1),
     (h×ph×ph,h×hp×hp×hp×hp),
@@ -176,7 +162,7 @@ This is from BPGates:
     ]       
 
 Instead of doing: BPGates.CNOTPerm -> SparseGate -> QASM,
-and having to deal with sparsegate intepretation, we do this:
+and having to deal with sparsegate interpretation, we do this:
 BPGates.CNOTPerm -> QASM, which means we will skip using toQCcircuit. 
 We can hack this by making our own 'good_perm_qc' (good_perm_qasm) the same as how it is done in BPGates, except swapping out the gate definitions (h, p, hp, ph...) with the same QASM ones.
 """
@@ -224,13 +210,10 @@ end
 # Normal CNOT
 to_qasm(op::sCNOT) = "cx q[$(op.q1)], q[$(op.q2)]\n"
 
-# To keep track of wether or not to re-entangle after some operations 
-should_re_entangle_after(op) = false
-should_re_entangle_after(op::BellMeasure) = true # only after measurement 
+# To keep track of whether or not to re-entangle after some operations 
+# should_re_entangle_after(op) = false
+# should_re_entangle_after(op::BellMeasure) = true # only after measurement 
 # others ?
-
-# type piracy to fix this?
-# affectedqubits(g::BellMeasure) = (g.sidx,)
 
 """
     to_qasm(circ, registers::Int,purified_pairs::Int;comments=true,entanglement=define_Φ⁺_qasm)
@@ -282,7 +265,7 @@ function to_qasm(circ, registers::Int,purified_pairs::Int;comments=true,entangle
         else
             add(to_qasm(op))
         end
-        # decriment the pair_left array
+        # decrement the pair_left array
         # currently_affectedqubits = affectedqubits(op)
         # for pair in currently_affectedqubits
         #     ops_per_pair_left[pair] -= 1

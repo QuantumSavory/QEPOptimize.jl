@@ -1,7 +1,7 @@
 using TestItems
 
 # No longer using these TODO 
-# @testitem "qasm bell state preperation" begin
+# @testitem "qasm bell state preparation" begin
 #     using QEPOptimize: Φ⁺_qasm, Ψ⁺_qasm, Φ⁻_qasm, Ψ⁻_qasm
 #     @test Φ⁺_qasm(1,2) == "h q[1];\ncx q[1],q[2];\n"
 #     @test Φ⁻_qasm(1,2) == "x q[1];\nh q[1];\ncx q[1],q[2];\n"
@@ -25,6 +25,17 @@ using TestItems
 
     # Make sure that header and registers are correct (first four lines)
     @test startswith(qasm_str_full, "OPENQASM 2.0;\ninclude \"qelib1.inc\";\nqreg q[$(setup.number_registers*2)];creg c[$(setup.number_registers*2)];\n")
+
+    # Does not fail with some ops/non ops
+    Fakeop = 3
+    to_qasm(Fakeop)
+
+    # all measure ops contain 'measure'
+    using QuantumClifford: sMX,sMZ,sMY
+    measure = "measure q"
+    @test occursin(measure,to_qasm(sMZ(1)))
+    @test occursin(measure,to_qasm(sMX(1)))
+    @test occursin(measure,to_qasm(sMY(1)))
 
 end
 
@@ -68,9 +79,10 @@ end
 end
 
 # TODO
-@testitem "to_stabilizer" setup=[setup] begin
+@testitem "to_stabilizer runs" setup=[setup] begin
     using QEPOptimize:to_stabilizer
 
     output = to_stabilizer(setup.test_ops_small,4)
 
+    to_stabilizer(setup.test_ops_small,4;show_steps=true)
 end

@@ -1,5 +1,7 @@
 module QEPOptimize
 
+import Base:+,==
+
 using BPGates
 using BPGates: mctrajectory!, continue_stat, PauliNoise # TODO these should be exported by default
 

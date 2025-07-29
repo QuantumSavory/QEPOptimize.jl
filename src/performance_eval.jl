@@ -14,6 +14,13 @@ function calculate_performance!(
 
     count_success = 0
     counts_marginals = zeros(Int,purified_pairs) # an array to find F₁, F₂, …, Fₖ (tracks how often each purified bell pair is in the desired state)
+    
+    # Edge case: purified pairs/registers have changed, and the circuit has previously had a performance calculation. In this case, the previous performance must be discarded, as its error probabilities are now invalid.
+    if indiv.performance.num_calcs > 0 && length(indiv.performance.error_probabilities) != purified_pairs+1 
+        # signal the previous performance to be discarded 
+        indiv.performance = Performance() # implies it is a blank performance
+    end
+
     counts_nb_errors = zeros(Int,purified_pairs+1) # an array to find P₀, P₁, …, Pₖ (tracks how often a given total number of errors happens) Careful with indexing it as it includes a P₀!
 
     noisy_purification_circuit = indiv.ops
@@ -39,8 +46,8 @@ function calculate_performance!(
     end
 
     if count_success == 0
-        indiv.performance =  Performance(counts_nb_errors, 0,0, 0, 0) # TODO this is probably going to break the optimization runs and lead to picking low performing individuals for certain cost functions -- do this better
-        return indiv.performance
+        # TODO this is probably going to break the optimization runs and lead to picking low performing individuals for certain cost functions -- do this better
+        return update_performance!(indiv,Performance(counts_nb_errors,0,0, 0, 0,1))
     end
 
     p_success = count_success    / num_simulations # proportion of successful simulations
@@ -50,7 +57,30 @@ function calculate_performance!(
     correctable_errors = div(code_distance  - 1, 2) # maximum number of correctable errors based on code distance after teleportation
     indiv_logical_qubit_fidelity = sum(err_probs[1:min(end, correctable_errors+1)]) # calculates the logical qubit fidelity by summing the probabilities of correctable errors
 
-    indiv.performance =  Performance(err_probs, err_probs[1], indiv_logical_qubit_fidelity, mean(marginals), p_success)
+    return update_performance!(indiv,Performance(
+        err_probs, 
+        err_probs[1], 
+        indiv_logical_qubit_fidelity, 
+        mean(marginals), 
+        p_success,
+        1)
+    )
+end
 
+"""
+    update_performance!(indiv::Individual,new::Performance)
+
+Helper function to deal with circuit init, and performance averaging. The indiv given will have their performance averaged with the new performance, if their current performance is defined (nonzero). Otherwise, the new performance will overrite their current. 
+"""
+function update_performance!(indiv::Individual,new::Performance)
+    @assert new.num_calcs >= 1 # This should always be the case at this point. The new performance should not be empty.
+
+    if indiv.performance.num_calcs == 0
+        # old perf has not been calculated yet/not usable, so use the new one
+        indiv.performance = new
+    else 
+        # old perf is calculated, so average the two
+        indiv.performance += new
+    end
     return indiv.performance
 end

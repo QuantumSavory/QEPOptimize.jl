@@ -122,6 +122,13 @@ function add_mutations!(
     # populate the thread_mutes by running the function on each thread
     mutants = tmapreduce(indiv_to_mutes,vcat,individuals; nchunks=max_threads) # TODO the reduce operation should be vcat
 
+    # add cleanup canonicalization step
+    function cleanup_indiv(indiv)
+        cleanup_two_measurements!(indiv.ops)
+        return indiv
+    end
+    tmap!(cleanup_indiv,mutants)
+
     ## add all mutes back to the individuals vector
     append!(individuals, mutants)
 end

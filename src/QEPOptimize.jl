@@ -3,6 +3,8 @@ module QEPOptimize
 using BPGates
 using BPGates: mctrajectory!, continue_stat, PauliNoise # TODO these should be exported by default
 
+using QuantumClifford:AbstractMeasurement
+
 using Makie
 
 using Statistics: mean
@@ -23,5 +25,6 @@ include("performance_eval.jl")
 include("mutate.jl")
 include("evolve.jl")
 include("analysis.jl")
+include("canonicalization.jl")
 
 end

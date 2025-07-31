@@ -53,32 +53,27 @@ end
 end
 
 @testitem "affectedqubits" begin
-    using BPGates: affectedqubits
+    using Quantikz: affectedqubits
     using BPGates
     # Test with CNOTPerm
     op = BPGates.CNOTPerm(2, 1, 2, 4)
     qubits = affectedqubits(op)
-    @test qubits == (2, 4) # correct format
+    @test qubits == [2, 4]
 
     # Test with BellMeasure
     op = BPGates.BellMeasure(1, 1)
     qubits = affectedqubits(op)
-    @test qubits == (1,)
-
-    # Test with operation with no qubits (if such exists)
-    struct DummyOp end
-    qubits = affectedqubits(DummyOp())
-    @test qubits == ()
+    @test qubits == [1]
 
     # Test with NoisyBellMeasureNoisyReset
     op = BPGates.NoisyBellMeasureNoisyReset(BPGates.BellMeasure(1, 1), 0.1, 0.01, 0.01, 0.01)
     qubits = affectedqubits(op)
-    @test qubits == (1,)
+    @test qubits == [1]
 
     # Test with PauliNoiseBellGate
     op = BPGates.PauliNoiseBellGate(BPGates.CNOTPerm(2, 1, 2, 4), 0.01, 0.01, 0.01)
     qubits = affectedqubits(op)
-    @test qubits == (2, 4)
+    @test qubits == [2, 4]
     
 end
 

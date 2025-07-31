@@ -163,20 +163,6 @@ function thermal_relaxation_error_rate(t1, t2, gate_time)
     return λ₁, λ₂
 end
 
-
-# These have been moved to BPGates.jl, and will be deleted after finishing the pull request open at https://github.com/QuantumSavory/BPGates.jl/pull/31
-# if not using that version of BPGates, these will need to be uncommented.
-# retrieve qubits involved in a gate
-affectedqubits(gate::PauliNoiseBellGate) = (gate.g.idx1, gate.g.idx2)
-affectedqubits(gate::NoisyBellMeasureNoisyReset) = (gate.m.sidx,)
-affectedqubits(gate::BellMeasure) = (gate.sidx,)
-affectedqubits(gate::CNOTPerm) = (gate.idx1, gate.idx2)
-affectedqubits(gate)= ()  # Default case for gates that do not involve qubits
-
 # TODO more types of noise should be implemented
-    # gate_fidelity would turn CNOTPerm gates into gates wrapped into noise
-    # T1/T2 noise will add noise that happens even during wait time
-    # network_fidelity would turn BellMeasure into NoisyBellMeasureNoisyReset(...)
-    # measurement_fidelity would do the same
     # Probably it would be best to define a `noisify(::AbstractNoise, ::AbstractOperation)::AbstractOperation`
     # Or even `noisify_circuit(::AbstractNoise, ::Vector{<:AbstractOperation})` so that we can also cover the T1, T2 noise

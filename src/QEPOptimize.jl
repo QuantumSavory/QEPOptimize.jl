@@ -13,6 +13,8 @@ using DataStructures: counter
 
 using OhMyThreads: tmap,tmapreduce
 
+using Quantikz:affectedqubits
+
 export Individual, calculate_performance!, f_in_to_pauli, NetworkFidelity, NetworkPauliNoise, MeasurementError, T1T2Noise, Population, # TODO order these neatly
     multiple_steps_with_history!,
     analyze_f_out_vs_f_in, plot_circuit_analysis, plot_fitness_history

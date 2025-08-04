@@ -30,6 +30,8 @@ function step!(
 
     add_mutations!(population.individuals; max_ops, new_mutants, valid_pairs=1:number_registers) # TODO (low priority) decouple valid_pairs from number_registers
 
+    canonicalize_cleanup!(population,number_registers,purified_pairs)
+
     # Sort the population by fitness and cull the excess individuals to maintain the population size
     simulate_and_sort!(
         population;
@@ -121,14 +123,7 @@ function add_mutations!(
 
     # populate the thread_mutes by running the function on each thread
     mutants = tmapreduce(indiv_to_mutes,vcat,individuals; nchunks=max_threads) # TODO the reduce operation should be vcat
-
-    # add cleanup canonicalization step
-    function cleanup_indiv(indiv)
-        cleanup_two_measurements!(indiv.ops)
-        return indiv
-    end
-    tmap!(cleanup_indiv,mutants)
-
+    
     ## add all mutes back to the individuals vector
     append!(individuals, mutants)
 end

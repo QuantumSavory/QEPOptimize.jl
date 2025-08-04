@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.20.10
+# v0.20.13
 
 using Markdown
 using InteractiveUtils
@@ -64,6 +64,8 @@ md"""
 
 * Number of Simulations: $(@bind num_simulations PlutoUI.Slider(100:100:5000, default=1000, show_value=true))
 
+* Max performance calculations per circuit: $(@bind max_perf_calcs PlutoUI.Slider(1:1:50, default=10, show_value=true))
+
 * Population Size: $(@bind pop_size PlutoUI.Slider(10:10:100, default=20, show_value=true))
 
 * Initial Operations: $(@bind start_ops PlutoUI.Slider(5:20, default=10, show_value=true))
@@ -73,7 +75,7 @@ md"""
 
 * Number of Evolution Steps: $(@bind evolution_steps PlutoUI.Slider(50:150, default=80, show_value=true))
 
-* New Mutants: $(@bind new_mutants PlutoUI.Slider(5:5:30, default=10, show_value=true))
+* New Mutants: $(@bind new_mutants PlutoUI.Slider(5:1:30, default=10, show_value=true))
 
 * Drop Probability: $(@bind p_drop PlutoUI.Slider(0.0:0.05:0.5, default=0.1, show_value=true))
 
@@ -92,6 +94,7 @@ begin
 	    code_distance=1, # Not needed to change for now
 	    pop_size=pop_size,
 	    noises=[NetworkFidelity(network_fidelity), PauliNoise(paulix, pauliy, pauliz)],
+		max_performance_calcs=max_perf_calcs
 	)
 	
 	init_config = (;

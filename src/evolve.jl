@@ -46,23 +46,40 @@ end
 function multiple_steps_with_history!(
     population::Population, steps;
     step_callback=()->nothing,
+    max_simulations::Int=5000,
     step_config... # same as step!
 )
     fitness_history = Matrix{Float64}(undef, steps+1, step_config[:pop_size])
     fitness_history[1, :] = [i.fitness for i in population.individuals]
     transition_counts = []
 
+    # For dynamic increase of simulation count. starts at 'num_simulations', and increases to 'max_simulations' only if needed by undetermined fitness, the chunk size is regulated by the amount of throttle warnings, which should be fine at somewhere around 10. this would mean that it would take at least 10 steps before the max simulation count is reached.
     throttling_warned = 0
-
+    simulation_step_size = round(Int,(max_simulations - step_config[:num_simulations])/THROTTLE_WARNINGS)
+    step_config_copy = copy(step_config) # we will edit parameters in this
+    
     for i in 1:steps
-        step!(population; step_config...)
+        step!(population; step_config_copy...)
 
-        # Check to make sure that the optimizer is not in the 'fitness = 1.0' failure mode
-        if population.individuals[1].fitness == 1.0 && throttling_warned < THROTTLE_WARNINGS
-            throttling_warned += 1
-            @warn "Simulation is throttled: Increase simulation count, or decrease new mutants to fix. Top circuit has fitness = 1.0"
-            # If fitness is 1, then all of the simulations done to evaluate a circuit show no errors. This implies the circuit is good, but stops the optimizer from performing well. Increasing simulation count can fix this issue
-            # but, decreasing new mutants will also fix the issue. This is because fewer new circuits need to be simulated, causing more simulations on the current circuits to get a better non-1.0 fidelity. 
+        # Check to make sure that the optimizer is not in the 'fitness = 1.0' failure mode, and update simulation count if possible
+        # If fitness is 1, then all of the simulations done to evaluate a circuit show no errors. This implies the circuit is good, but stops the optimizer from performing well. Increasing simulation count can fix this issue
+        # but, decreasing new mutants will also fix the issue. This is because fewer new circuits need to be simulated, causing more simulations on the current circuits to get a better non-1.0 fidelity. 
+        if population.individuals[1].fitness == 1.0 
+            if max_simulations <= step_config[:num_simulations] && throttling_warned < THROTTLE_WARNINGS
+                # User has not set max sim, default to basic warning 
+                throttling_warned += 1
+                @warn "Simulation is throttled, set max_simulations for dynamic increase of simulation count or increase num_simulations to fix. Top circuit has fitness = 1.0"
+            elseif throttling_warned == THROTTLE_WARNINGS
+                # reached the max sim count
+                step_config_copy[:num_simulations] = max_simulations
+                @warn "Simulation is throttled: Please increase max simulation count. Simulation count set to $(step_config_copy[:num_simulations])/$(max_simulations)"
+                throttling_warned += 1
+            elseif throttling_warned < THROTTLE_WARNINGS
+                # sim throttled, still have warnings left. Increase sim count and warn
+                step_config_copy[:num_simulations] += simulation_step_size
+                @warn "Simulation is throttled: Increased simulation count to $(step_config_copy[:num_simulations])/$(max_simulations)"
+                throttling_warned += 1
+            end
         end
 
         fitness_history[i+1,:] = [i.fitness for i in population.individuals]

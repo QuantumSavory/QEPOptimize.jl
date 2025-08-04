@@ -3,6 +3,8 @@ module QEPOptimize
 using BPGates
 using BPGates: mctrajectory!, continue_stat, PauliNoise # TODO these should be exported by default
 
+using QuantumClifford:AbstractMeasurement
+
 using Makie
 
 using Statistics: mean
@@ -11,7 +13,9 @@ using Random: randperm
 
 using DataStructures: counter
 
-using OhMyThreads: tmap,tmapreduce
+using OhMyThreads: tmap,tmap!,tmapreduce
+
+using Quantikz:affectedqubits
 
 export Individual, calculate_performance!, f_in_to_pauli, NetworkFidelity, NetworkPauliNoise, Population, # TODO order these neatly
     multiple_steps_with_history!,
@@ -23,5 +27,6 @@ include("performance_eval.jl")
 include("mutate.jl")
 include("evolve.jl")
 include("analysis.jl")
+include("canonicalization.jl")
 
 end

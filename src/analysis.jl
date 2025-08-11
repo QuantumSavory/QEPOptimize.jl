@@ -68,3 +68,41 @@ function plot_fitness_history(
 
     return fig
 end
+
+"""
+    to_stabilizer(circ,registers;show_steps=false)
+    Apply circuit to a QuantumClifford MixedDestabilizer. Optionally, show each step as the operations are applied 
+"""
+function to_stabilizer(circ,registers;show_steps=false)
+    state = BellState(registers)
+    stab = MixedDestabilizer(state)
+    output = ""
+    if show_steps
+        output *= string(stab)
+    end
+    for op in circ
+        # Get Clifford version of op
+        for cliff_op in toQCcircuit(op)
+            # Apply op to stabilizer
+            if isa(cliff_op,BellMeasurement)
+                for m_op in cliff_op.measurements
+                    apply!(stab,m_op)
+                end
+            # TODO add more ops here/switch to multiple dispatch on to_stabilizer() calls
+            # ie, define to_stabilizer function for any possible op, then combine results of calls
+            else
+                apply!(stab,cliff_op)
+            end
+            # if we are showing steps:
+            if show_steps
+                # Append output
+                output *= "\n$(cliff_op)\n$(string(stab))"
+            end
+        end
+    end
+    if show_steps 
+        return output
+    else
+        return string(stab)
+    end
+end

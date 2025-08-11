@@ -28,7 +28,7 @@ begin
 	using PlutoUI
 	using Quantikz
 	using QEPOptimize
-	using QEPOptimize: initialize_pop!, step!, NetworkFidelity
+	using QEPOptimize: initialize_pop!, step!, NetworkFidelity,to_stabilizer
 	using BPGates
 	using BPGates: PauliNoise, BellMeasure, CNOTPerm
 	using QuantumClifford: SparseGate, sCNOT, affectedqubits, BellMeasurement, Reset, sMX, sMZ, sMY
@@ -207,6 +207,17 @@ begin
 	end
 end
 
+# ╔═╡ 8e0f426b-db5b-4bed-b7a8-4e957db564e7
+md"
+#### Stabilizer Symbols
+"
+
+# ╔═╡ 0b21893a-a0f3-43bf-af34-c415ce9cc38d
+md"Show each step of the stabilizer: $(@bind show_each_step PlutoUI.CheckBox())"
+
+# ╔═╡ 4921f1fe-8735-4a6c-9c29-a79059e5c20d
+print(to_stabilizer(best_circuit.ops,number_registers;show_steps=show_each_step))
+
 # ╔═╡ Cell order:
 # ╟─8fc5cb18-70cc-4846-a62b-4cda69df12b0
 # ╟─353e15de-0a9b-4107-a265-28953e1deee2
@@ -224,3 +235,6 @@ end
 # ╠═49894406-6dfe-4aeb-8193-e31731bfab65
 # ╠═e99563b8-2827-4e0a-b7c5-e812fef7c6c5
 # ╠═c434086a-d9e3-436b-91ad-a7ddef56622d
+# ╟─8e0f426b-db5b-4bed-b7a8-4e957db564e7
+# ╟─0b21893a-a0f3-43bf-af34-c415ce9cc38d
+# ╠═4921f1fe-8735-4a6c-9c29-a79059e5c20d

@@ -10,6 +10,8 @@ using TestItems
 
     test_ops_small = [BPGates.CNOTPerm(2, 1, 2, 4),BPGates.BellMeasure(1, 1)]
     test_indiv_small = Individual(test_ops_small)
+    
+    number_registers = 4
 
     starting_length = length(test_ops)
     empty = Individual()

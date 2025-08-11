@@ -28,7 +28,7 @@ begin
 	using PlutoUI
 	using Quantikz
 	using QEPOptimize
-	using QEPOptimize: initialize_pop!, step!, NetworkFidelity
+	using QEPOptimize: initialize_pop!, step!, NetworkFidelity, to_qasm, define_Φ⁺_qasm
 	using BPGates
 	using BPGates: PauliNoise, BellMeasure, CNOTPerm
 	using QuantumClifford: SparseGate, sCNOT, affectedqubits, BellMeasurement, Reset, sMX, sMZ, sMY
@@ -207,6 +207,14 @@ begin
 	end
 end
 
+# ╔═╡ ef3dcaaa-d787-4520-a9df-3d91ab32f179
+begin
+	qasm_out = to_qasm(best_circuit.ops,number_registers,purified_pairs;comments=true,entanglement=define_Φ⁺_qasm)
+	print(qasm_out)
+	PlutoUI.DownloadButton(qasm_out,"qasm_output_qepo.txt")
+end
+
+
 # ╔═╡ Cell order:
 # ╟─8fc5cb18-70cc-4846-a62b-4cda69df12b0
 # ╟─353e15de-0a9b-4107-a265-28953e1deee2
@@ -224,3 +232,4 @@ end
 # ╠═49894406-6dfe-4aeb-8193-e31731bfab65
 # ╠═e99563b8-2827-4e0a-b7c5-e812fef7c6c5
 # ╠═c434086a-d9e3-436b-91ad-a7ddef56622d
+# ╠═ef3dcaaa-d787-4520-a9df-3d91ab32f179

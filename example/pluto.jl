@@ -29,7 +29,7 @@ begin
 	using PlutoUI:confirm, Slider
 	using Quantikz
 	using QEPOptimize
-	using QEPOptimize: initialize_pop!, step!, NetworkFidelity, to_qasm, to_stabilizer, EVOLUTION_METRICS, define_Φ⁺_qasm
+	using QEPOptimize: initialize_pop!, step!, NetworkFidelity, Population, EVOLUTION_METRICS
 	using BPGates
 	using BPGates: PauliNoise, BellMeasure, CNOTPerm
 	using QuantumClifford: SparseGate, sCNOT, affectedqubits, BellMeasurement, Reset, sMX, sMZ, sMY
@@ -220,13 +220,11 @@ Choose how to display operations on this circuit:
 
 # ╔═╡ 9a1b169a-36f5-4d2e-ad63-a7e184abde66
 begin
-	@bind enabled_output PlutoUI.MultiCheckBox([:print => "Print",:stab_desc => "Stabilizer description", :qasm => "QASM", :stab_symbols =>"Stabilizer symbols"];default=[:print,:stab_desc,:qasm,:stab_symbols])
+	@bind enabled_output PlutoUI.MultiCheckBox([:print => "Print",:stab_desc => "Stabilizer description"];default=[:print,:stab_desc])
 end
 
 # ╔═╡ 23123ce9-58b0-4eb7-8d39-fd56499b3ed2
-md"
-#### Print
-"
+:print in enabled_output ? md"#### Print" : nothing
 
 # ╔═╡ e19cb382-99ae-4629-8242-83827c9e3631
 begin
@@ -246,9 +244,7 @@ begin
 end
 
 # ╔═╡ b2f3c15c-1b03-4c4e-9c68-539f96ebd4cb
-md"
-#### Stabilizer Description
-"
+:stab_desc in enabled_output ? md"#### Stabilizer Description" : nothing
 
 # ╔═╡ c434086a-d9e3-436b-91ad-a7ddef56622d
 begin
@@ -279,34 +275,6 @@ begin
 	end
 end
 
-
-# ╔═╡ e8b444fb-f300-4997-8552-c88e6bd6495c
-md"
-#### QASM
-"
-
-# ╔═╡ d5fc459c-2c34-4f2f-a7ab-bce5e196ce1e
-begin
-	if :qasm in enabled_output 
-		qasm_out = to_qasm(best_circuit.ops,c.number_registers,c.purified_pairs;comments=true,entanglement=define_Φ⁺_qasm)
-		print(qasm_out)
-		PlutoUI.DownloadButton(qasm_out,"qasm_output_qepo.txt")
-
-	end
-end
-
-# ╔═╡ 9974565a-dc10-4069-994d-4775629f4cf5
-md"
-#### Stabilizer Symbols
-"
-
-# ╔═╡ d5173d32-50ae-47f8-9043-c7cd76c611bb
-md"Show each step of the stabilizer: $(@bind show_each_step PlutoUI.CheckBox())"
-
-# ╔═╡ 1a21ace6-b448-49d8-b544-97e8c0194723
-:stab_symbols in enabled_output && print(to_stabilizer(best_circuit.ops,c.number_registers;show_steps=show_each_step))
-
-
 # ╔═╡ Cell order:
 # ╟─8fc5cb18-70cc-4846-a62b-4cda69df12b0
 # ╠═353e15de-0a9b-4107-a265-28953e1deee2
@@ -316,7 +284,7 @@ md"Show each step of the stabilizer: $(@bind show_each_step PlutoUI.CheckBox())"
 # ╟─dad1728c-c341-44cc-88e6-d26ca1815a30
 # ╟─cef70317-fc58-42b3-987b-a454064f0113
 # ╟─3d17bc74-fa91-410c-b060-b15eae7a564b
-# ╟─c09c7bb8-1d08-45da-81ca-0cf1d1985b91
+# ╠═c09c7bb8-1d08-45da-81ca-0cf1d1985b91
 # ╟─451be68d-b0bb-4b1b-b7fa-5c39618f95de
 # ╟─988e9e99-cf93-46a3-be59-11c11e316b07
 # ╟─1b6a9400-9d3b-42f1-a83f-c16f8134cb93
@@ -329,8 +297,3 @@ md"Show each step of the stabilizer: $(@bind show_each_step PlutoUI.CheckBox())"
 # ╟─e19cb382-99ae-4629-8242-83827c9e3631
 # ╟─b2f3c15c-1b03-4c4e-9c68-539f96ebd4cb
 # ╟─c434086a-d9e3-436b-91ad-a7ddef56622d
-# ╟─e8b444fb-f300-4997-8552-c88e6bd6495c
-# ╟─d5fc459c-2c34-4f2f-a7ab-bce5e196ce1e
-# ╟─9974565a-dc10-4069-994d-4775629f4cf5
-# ╟─d5173d32-50ae-47f8-9043-c7cd76c611bb
-# ╟─1a21ace6-b448-49d8-b544-97e8c0194723

@@ -55,7 +55,7 @@ begin
 	
 	const init_config = Ref{@NamedTuple{start_ops::Int64, start_pop_size::Int64, num_simulations::Int64, number_registers::Int64, purified_pairs::Int64, code_distance::Int64, pop_size::Int64, noises::Vector{Any}}}()
 	
-	const step_config = Ref{@NamedTuple{max_ops::Int64, new_mutants::Int64, p_drop::Float64, p_mutate::Float64, p_gain::Float64, evolution_metric::Symbol, num_simulations::Int64, number_registers::Int64, purified_pairs::Int64, code_distance::Int64, pop_size::Int64, noises::Vector{Any}}}()
+	const step_config = Ref{@NamedTuple{max_ops::Int64, new_mutants::Int64, p_drop::Float64, p_mutate::Float64, p_gain::Float64, evolution_metric::Symbol, max_performance_calcs::Int64, num_simulations::Int64, number_registers::Int64, purified_pairs::Int64, code_distance::Int64, pop_size::Int64, noises::Vector{Any}}}()
 
 	const evolution_steps_ref = Ref{Int64}()
 
@@ -88,7 +88,9 @@ md"""
 
 ## Simulation Parameters
 
-* Number of Simulations: $(Child( "num_simulations",PlutoUI.Scrubbable(100:100:500000, default=1000)))
+* Number of Simulations: $(Child("num_simulations", PlutoUI.Slider(100:100:5000, default=1000, show_value=true)))
+
+* Max performance calculations per circuit: $(Child("max_perf_calcs", PlutoUI.Slider(1:1:50, default=10, show_value=true)))
 
 * Population Size: $( Child("pop_size", PlutoUI.Slider(10:10:100, default=20, show_value=true)))
 
@@ -101,7 +103,7 @@ md"""
 
 * Number of Evolution Steps: $(Child("evolution_steps", PlutoUI.Slider(10:150, default=50, show_value=true)))
 
-* New Mutants: $(Child("new_mutants", PlutoUI.Slider(5:5:30, default=10, show_value=true);))
+* New Mutants: $(Child( "new_mutants", PlutoUI.Slider(5:5:30, default=10, show_value=true)))
 
 * Drop Probability: $(Child("p_drop", PlutoUI.Slider(0.0:0.05:0.5, default=0.1, show_value=true)))
 
@@ -121,10 +123,6 @@ md"""
 
 # ╔═╡ cef70317-fc58-42b3-987b-a454064f0113
 begin
-	## Update config values
-	
-	# Every param has 'c.***' because c is a NamedTuple that updates/triggers-this-cell when the user clicks a button (Pluto.UI.confirm), allowing the params to be changed as much as needed before a sim is run. This does add overhead to setting the config, so there may be a better way.
-
 	config[] = (
 			num_simulations=c.num_simulations,
 		    number_registers=c.number_registers,
@@ -133,7 +131,7 @@ begin
 		    pop_size=c.pop_size,
 			noises=[NetworkFidelity(c.network_fidelity), PauliNoise(c.paulix, c.pauliy, c.pauliz)],
 		)
-
+	
 	init_config[] = (
 		start_ops=c.start_ops,
 		start_pop_size=c.start_pop_size,
@@ -147,6 +145,7 @@ begin
 		p_mutate=c.p_mutate,
 		p_gain=c.p_gain,
 		evolution_metric=c.evolution_metric,
+		max_performance_calcs=c.max_perf_calcs,
 		config[]...
 	)
 
@@ -284,7 +283,7 @@ end
 # ╟─dad1728c-c341-44cc-88e6-d26ca1815a30
 # ╟─cef70317-fc58-42b3-987b-a454064f0113
 # ╟─3d17bc74-fa91-410c-b060-b15eae7a564b
-# ╠═c09c7bb8-1d08-45da-81ca-0cf1d1985b91
+# ╟─c09c7bb8-1d08-45da-81ca-0cf1d1985b91
 # ╟─451be68d-b0bb-4b1b-b7fa-5c39618f95de
 # ╟─988e9e99-cf93-46a3-be59-11c11e316b07
 # ╟─1b6a9400-9d3b-42f1-a83f-c16f8134cb93

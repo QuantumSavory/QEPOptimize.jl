@@ -64,6 +64,8 @@ md"""
 
 * Number of Simulations: $(@bind num_simulations PlutoUI.Slider(100:100:5000, default=1000, show_value=true))
 
+* Max number of Simulations: $(@bind max_simulations PlutoUI.Slider(100:100:10000, default=5000, show_value=true))
+
 * Max performance calculations per circuit: $(@bind max_perf_calcs PlutoUI.Slider(1:1:50, default=10, show_value=true))
 
 * Population Size: $(@bind pop_size PlutoUI.Slider(10:10:100, default=20, show_value=true))
@@ -119,7 +121,7 @@ end;
 
 
 # ╔═╡ c09c7bb8-1d08-45da-81ca-0cf1d1985b91
-_, fitness_history, transition_counts_matrix, transition_counts_keys = multiple_steps_with_history!(pop, evolution_steps; step_config...);
+_, fitness_history, transition_counts_matrix, transition_counts_keys = multiple_steps_with_history!(pop, evolution_steps; max_simulations=max_simulations,step_config...);
 
 # ╔═╡ 451be68d-b0bb-4b1b-b7fa-5c39618f95de
 md"

@@ -165,6 +165,12 @@ end
 begin 
 	# Run simulation
 	run_simulation_trigger
+	try
+		# check if values have been set
+		pop[], evolution_steps_ref[], step_config[];
+	catch
+		throw("Config not set")
+	end
 	_, fitness_history, transition_counts_matrix, transition_counts_keys = multiple_steps_with_history!(pop[], evolution_steps_ref[]; step_config[]...); 
 	
 	md"""Optimizing..."""

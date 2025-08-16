@@ -1,6 +1,5 @@
 # TODO (low priority) this would be a great place to use an Enum or, even better, an algebraic data type (ADT)
 const HISTORIES = [:manual, :survivor, :random, :child, :drop, :gain, :swap, :opsmutate]
-const EVOLUTION_METRICS =[:logical_qubit_fidelity, :purified_pairs_fidelity, :average_marginal_fidelity]
 
 const THROTTLE_WARNINGS = 10 # max amount of warnings per multiple_steps_with_history! call
 

@@ -69,7 +69,7 @@ function rand_op(valid_pairs)
     return op
 end
 
-"make a 'child' indivdual from meshing together two individuals' operations"
+"make a 'child' individual from meshing together two individuals' operations"
 function make_child(mother_ops::Vector{Any}, father_ops::Vector{Any},max_ops::Int64)
     # one/both empty ops edge case
     mother_empty = length(mother_ops) == 0

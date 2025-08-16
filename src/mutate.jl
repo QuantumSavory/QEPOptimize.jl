@@ -69,15 +69,8 @@ function rand_op(valid_pairs)
     return op
 end
 
-"make a 'child' individual from meshing together two individuals' operations"
+"make a 'child' indivdual from meshing together two individuals' operations"
 function make_child(mother_ops::Vector{Any}, father_ops::Vector{Any},max_ops::Int64)
-    # one/both empty ops edge case
-    mother_empty = length(mother_ops) == 0
-    father_empty = length(father_ops) == 0
-    mother_empty && !father_empty && return Individual(:child, copy(father_ops))
-    !mother_empty && father_empty && return Individual(:child, copy(mother_ops))
-    mother_empty && father_empty && return Individual(:child, [])
-
     # Child algorithm:
     # choose a location to 'split' the circuits of both the mother and father. The mother and father have their own splits. All ops up to the split will be taken from the mother, and all ops from the end-minus-split to the end will be taken from the father. 
 

@@ -1,21 +1,4 @@
 """
-    step!(
-    population::Population;
-    max_ops::Int=5,
-    number_registers::Int=2,
-    purified_pairs::Int=1,
-    num_simulations::Int=100,
-    pop_size::Int=100,
-    code_distance::Int=1,
-    noises=[NetworkFidelity(0.9)],
-    new_mutants::Int=10,
-    p_drop=0.1,
-    p_mutate=0.1,
-    p_gain=0.1,
-    evolution_metric=:logical_qubit_fidelity,
-    max_performance_calcs=10
-)
-
 Important: This calls sort and cull.
 
 Execute one generation step of the genetic algorithm
@@ -36,7 +19,6 @@ function step!(
     p_drop=0.1,
     p_mutate=0.1,
     p_gain=0.1,
-    evolution_metric=:logical_qubit_fidelity,
     max_performance_calcs=10
 )
     # Mark existing individuals as survivors
@@ -56,92 +38,25 @@ function step!(
         purified_pairs,
         number_registers, # TODO (low priority) this should be by-default derived from `indiv`
         noises=[NetworkFidelity(0.9)], # TODO configurable noise
-        evolution_metric=evolution_metric,
-        max_performance_calcs=max_performance_calcs
+        max_performance_calcs
     )
     cull!(population, pop_size)
 end
 
-"""
-    multiple_steps_with_history!(
-    population::Population, steps;   # Same as step, but it needs to be specified to be used in this function
-    step_callback=()->nothing,
-    max_ops::Int=5,
-    number_registers::Int=2,
-    purified_pairs::Int=1,
-    num_simulations::Int=100,
-    pop_size::Int=100,
-    code_distance::Int=1,
-    noises=[NetworkFidelity(0.9)],
-    new_mutants::Int=10,
-    p_drop=0.1,
-    p_mutate=0.1,
-    p_gain=0.1,
-    evolution_metric=:logical_qubit_fidelity,
-    max_performance_calcs=10
-)
-
-Step any given amount of times, keeping track of fitness and mutation type (survivior, drop_op, etc...)
-"""
 function multiple_steps_with_history!(
-    population::Population, steps;   # Same as step, but it needs to be specified to be used in this function
+    population::Population, steps;
     step_callback=()->nothing,
-    max_ops::Int=5,
-    number_registers::Int=2,
-    purified_pairs::Int=1,
-    num_simulations::Int=100,
-    pop_size::Int=100,
-    code_distance::Int=1,
-    noises=[NetworkFidelity(0.9)],
-    new_mutants::Int=10,
-    p_drop=0.1,
-    p_mutate=0.1,
-    p_gain=0.1,
-    evolution_metric=:logical_qubit_fidelity,
-    max_performance_calcs=10
+    step_config... # same as step!
 )
-    # Edge case: current population not the same size as requested pop, likely to happen in the pluto notebook where pop_size can be changing alot
-    if length(population.individuals) != pop_size
-        @info "Population size changed, resizing population..."
-        # This is a failure mode, there have been 2 edge cases so far that fail from this sort of issue: bad population size
-        # make sure that the config is correct (avoid infinite loops)
-        @assert new_mutants >= 1
-        # if the population is less than what it needs to be:
-        while length(population.individuals) < pop_size
-            @info "Population size too low, increasing" # Include a message to make it clear if we get stuck in this loop
-            # Add until there are enough 
-            add_mutations!(population.individuals; max_ops, new_mutants, valid_pairs=1:number_registers) 
-        end
-        # And if we have too much (maybe from the loop above), cull the population to the correct amount
-        cull!(population, pop_size)
-    end
-
-    # This is to confirm that the if statement above worked
-    @assert length(population.individuals) == pop_size
-
-    fitness_history = Matrix{Float64}(undef, steps+1, pop_size)
+    fitness_history = Matrix{Float64}(undef, steps+1, step_config[:pop_size])
     fitness_history[1, :] = [i.fitness for i in population.individuals]
     transition_counts = []
 
-    # Keep track of when throttling (fidelity is 1 for some individuals) occurs
     throttling_warned = 0
 
-    @progress for i in 1:steps
-        step!(population; max_ops,
-            number_registers,
-            purified_pairs,
-            num_simulations,
-            pop_size,
-            code_distance,
-            noises,
-            new_mutants,
-            p_drop,
-            p_mutate,
-            p_gain,
-            evolution_metric,
-            max_performance_calcs
-        )
-  
+    for i in 1:steps
+        step!(population; step_config...)
+
         # Check to make sure that the optimizer is not in the 'fitness = 1.0' failure mode
         if population.individuals[1].fitness == 1.0 && throttling_warned < THROTTLE_WARNINGS
             throttling_warned += 1
@@ -229,20 +144,7 @@ function sort_pop!(population::Population)
     population.individuals = sort(population.individuals, by=indiv -> indiv.fitness, rev=true)
 end
 
-"""
-    simulate_and_sort!(
-    population::Population;
-    num_simulations::Int=100,
-    purified_pairs::Int=1,
-    number_registers::Int=2, # TODO (low priority) this should be by-default derived from `indiv`
-    code_distance::Int=1,
-    noises=[NetworkFidelity(0.9)],
-    evolution_metric=:logical_qubit_fidelity,
-    max_performance_calcs::Int=10
-)
-
-Evaluate and Sort the individuals in descending order of fitness
-"""
+"Evaluate and Sort the individuals in descending order of fitness"
 function simulate_and_sort!(
     population::Population;
     num_simulations::Int=100,
@@ -250,7 +152,6 @@ function simulate_and_sort!(
     number_registers::Int=2, # TODO (low priority) this should be by-default derived from `indiv`
     code_distance::Int=1,
     noises=[NetworkFidelity(0.9)],
-    evolution_metric=:logical_qubit_fidelity,
     max_performance_calcs::Int=10
 )
     # calculate and update each individual's performance
@@ -266,11 +167,9 @@ function simulate_and_sort!(
                 code_distance,
                 noises)
         end
-        
-        # Set fitness to whatever performance metric is supplied
-        indiv.fitness = getfield(indiv.performance, evolution_metric)
+        indiv.fitness = indiv.performance.purified_pairs_fidelity # TODO make it possible to select the type of fitness to evaluate
     end
-    
+
     # Parallel processing for performance calculations. Max threads will be set by the threads specified when running julia. ex) julia -t 16
 
     tmap(update!,population.individuals)
@@ -280,31 +179,11 @@ end
 
 "Reduce the population size to the target `population_size` (assumes pop is already sorted)"
 function cull!(population::Population, population_size::Int)
-    if size(population.individuals)[1] < population_size
-        @warn "Culling population to $population_size but it only has $(size(population.individuals)[1])"
-    elseif size(population.individuals)[1] == population_size
-        return
-    else
-        population.individuals = population.individuals[1:population_size]
-    end
+    population.individuals = population.individuals[1:population_size]
 end
 
 
 """
-    initialize_pop!(
-    population::Population;
-    start_ops::Int=10,
-    start_pop_size::Int=1000,
-    number_registers::Int=2,
-    pop_size::Int=100,
-    num_simulations::Int=100,
-    purified_pairs::Int=1,
-    code_distance::Int=1,
-    noises=[NetworkFidelity(0.9)],
-    evolution_metric=:logical_qubit_fidelity,
-    max_performance_calcs=10
-)
-
 Initialize a population of quantum circuits, sort, and cull.
 """
 function initialize_pop!(
@@ -317,40 +196,28 @@ function initialize_pop!(
     purified_pairs::Int=1,
     code_distance::Int=1,
     noises=[NetworkFidelity(0.9)],
-    evolution_metric=:logical_qubit_fidelity,
     max_performance_calcs=10
 )
     valid_pairs=1:number_registers # TODO (low priority) decouple valid_pairs from number_registers
 
     number_registers >= 2 || throw(ArgumentError("number_registers must be >= 2"))
 
-    # To help with loading bars with ProgressLogging
-    @progress for f in (()-> 
-    begin
-
-    # create individuals
-        for _ in 1:start_pop_size
-            indiv = Individual(:random)
-            for _ in 1:start_ops
-                push!(indiv.ops, rand_op(valid_pairs))
-            end
-            push!(population.individuals, indiv)
+    for _ in 1:start_pop_size
+        indiv = Individual(:random)
+        for _ in 1:start_ops
+            push!(indiv.ops, rand_op(valid_pairs))
         end
-    end,
+        push!(population.individuals, indiv)
+    end
 
-    () -> simulate_and_sort!(
+    simulate_and_sort!(
         population;
         num_simulations,
         purified_pairs,
         number_registers,
         code_distance,
         noises,
-        evolution_metric,
         max_performance_calcs
-    ),
-
-    () -> cull!(population,pop_size))
-
-    # run each function with progresslogging
-    f() end
+    )
+    cull!(population,pop_size)
 end

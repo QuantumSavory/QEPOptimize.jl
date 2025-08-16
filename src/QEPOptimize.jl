@@ -3,9 +3,7 @@ module QEPOptimize
 import Base:+,==
 
 using BPGates
-using BPGates: mctrajectory!, continue_stat, PauliNoise, BellMeasure, CNOTPerm, toQCcircuit
-# TODO (mctrajectory!, continue_stat, PauliNoise) should be exported by default
-
+using BPGates: mctrajectory!, continue_stat, PauliNoise # TODO these should be exported by default
 
 using Makie
 
@@ -16,10 +14,6 @@ using Random: randperm
 using DataStructures: counter
 
 using OhMyThreads: tmap,tmapreduce
-
-using ProgressLogging: @progress
-
-using QuantumClifford: SparseGate,Tableau,sCNOT,BellMeasurement,Reset,sMX,sMZ,sMY,Stabilizer,apply!,MixedDestabilizer,AbstractCliffordOperator, AbstractOperation
 
 export Individual, calculate_performance!, f_in_to_pauli, NetworkFidelity, NetworkPauliNoise, Population, # TODO order these neatly
     multiple_steps_with_history!,

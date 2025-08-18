@@ -102,7 +102,7 @@ function multiple_steps_with_history!(
     max_performance_calcs=10,
     max_simulations=5000
 )
-     # Edge case: current population not the same size as requested pop, likely to happen in the pluto notebook where pop_size can be changing alot
+    # Edge case: current population not the same size as requested pop, likely to happen in the pluto notebook where pop_size can be changing alot
     if length(population.individuals) != pop_size
         @info "Population size changed, resizing population..."
         # This is a failure mode, there have been 2 edge cases so far that fail from this sort of issue: bad population size
@@ -125,6 +125,7 @@ function multiple_steps_with_history!(
     fitness_history[1, :] = [i.fitness for i in population.individuals]
     transition_counts = []
 
+    # Keep track of when throttling (fidelity is 1 for some individuals) occurs
     throttling_warned = 0
     # For dynamic increase of simulation count. starts at 'num_simulations', and increases to 'max_simulations' only if needed by undetermined fitness, the chunk size is regulated by the amount of throttle warnings, which should be fine at somewhere around 10. this would mean that it would take at least 10 steps before the max simulation count is reached.
     throttling_warned = 0

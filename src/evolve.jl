@@ -136,7 +136,7 @@ function multiple_steps_with_history!(
         step!(population; max_ops,
             number_registers,
             purified_pairs,
-            current_sims,
+            num_simulations=current_sims,
             pop_size,
             code_distance,
             noises,

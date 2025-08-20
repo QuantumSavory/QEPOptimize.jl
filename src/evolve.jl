@@ -129,7 +129,7 @@ function multiple_steps_with_history!(
     throttling_warned = 0
     # For dynamic increase of simulation count. starts at 'num_simulations', and increases to 'max_simulations' only if needed by undetermined fitness, the chunk size is regulated by the amount of throttle warnings, which should be fine at somewhere around 10. this would mean that it would take at least 10 steps before the max simulation count is reached.
     throttling_warned = 0
-    simulation_step_size = round(Int,(max_simulations - step_config[:num_simulations])/THROTTLE_WARNINGS)
+    simulation_step_size = round(Int,(max_simulations - num_simulations)/THROTTLE_WARNINGS)
     current_sims = num_simulations # we will edit parameters in this
     
     @progress for i in 1:steps

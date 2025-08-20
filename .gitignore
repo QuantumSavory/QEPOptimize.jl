@@ -6,3 +6,7 @@ QuantumHardware
 BPGates.jl
 Manifest.toml
 meeting_notes.txt
+
+# Coverage files
+*.cov
+*/*.cov

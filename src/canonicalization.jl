@@ -107,7 +107,7 @@ end
 """
     cleanup_nonmeasurement_last_steps!(ops,num_pairs,num_purified)
 
-    If there is a non-measurement in the last step of a non-purified pair, add measurements.
+If there is a non-measurement in the last step of a non-purified pair, add random coincidence measurements.
 """
 function cleanup_nonmeasurement_last_steps!(ops,num_pairs,num_purified)
      if num_pairs <= num_purified 

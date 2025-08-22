@@ -52,7 +52,7 @@ end
 """
     cleanup_untargetted_pairs!(ops,num_pairs,num_purified)
 
-    Check if the circuit has an unused qubit (technically a pair), if so, add a CNOT and measure, ie, use it.
+    Check if the circuit has an unused qubit (technically a pair), if so, add a random two qubit Bell preserving gate `CNOTPerm` and coincidence measure in a random basis, ie, use it in a "probably" good way.
 """
 function cleanup_untargetted_pairs!(ops,num_pairs,num_purified)
     if num_pairs <= num_purified 

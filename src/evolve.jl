@@ -13,7 +13,8 @@
     p_mutate=0.1,
     p_gain=0.1,
     evolution_metric=:logical_qubit_fidelity,
-    max_performance_calcs=10
+    max_performance_calcs=10,
+    safe_canonicalize=true
 )
 
 Important: This calls sort and cull.
@@ -37,7 +38,8 @@ function step!(
     p_mutate=0.1,
     p_gain=0.1,
     evolution_metric=:logical_qubit_fidelity,
-    max_performance_calcs=10
+    max_performance_calcs=10,
+    safe_canonicalize=true
 )
     # Mark existing individuals as survivors
     # Survivors ensure that some individuals are carried over unchanged, maintaining good solutions
@@ -48,6 +50,8 @@ function step!(
     # TODO parents and offspring circuits
 
     add_mutations!(population.individuals; max_ops, new_mutants, valid_pairs=1:number_registers) # TODO (low priority) decouple valid_pairs from number_registers
+
+    canonicalize_cleanup!(population,number_registers,purified_pairs;safe=safe_canonicalize)
 
     # Sort the population by fitness and cull the excess individuals to maintain the population size
     simulate_and_sort!(
@@ -139,7 +143,8 @@ function multiple_steps_with_history!(
             p_mutate,
             p_gain,
             evolution_metric,
-            max_performance_calcs
+            max_performance_calcs,
+            safe_canonicalize = i > steps/2  # first half of steps, do unsafe canonicalization. Then, stick to safe.
         )
   
         # Check to make sure that the optimizer is not in the 'fitness = 1.0' failure mode
@@ -219,7 +224,7 @@ function add_mutations!(
 
     # populate the thread_mutes by running the function on each thread
     mutants = tmapreduce(indiv_to_mutes,vcat,individuals; nchunks=max_threads) # TODO the reduce operation should be vcat
-
+    
     ## add all mutes back to the individuals vector
     append!(individuals, mutants)
 end

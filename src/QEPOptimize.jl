@@ -7,6 +7,8 @@ using BPGates: mctrajectory!, continue_stat, PauliNoise, BellMeasure, CNOTPerm, 
 # TODO (mctrajectory!, continue_stat, PauliNoise) should be exported by default
 
 
+using QuantumClifford:AbstractMeasurement
+
 using Makie
 
 using Statistics: mean
@@ -15,7 +17,9 @@ using Random: randperm
 
 using DataStructures: counter
 
-using OhMyThreads: tmap,tmapreduce
+using OhMyThreads: tmap,tmap!,tmapreduce
+
+using Quantikz:affectedqubits
 
 using ProgressLogging: @progress
 
@@ -31,5 +35,6 @@ include("performance_eval.jl")
 include("mutate.jl")
 include("evolve.jl")
 include("analysis.jl")
+include("canonicalization.jl")
 
 end

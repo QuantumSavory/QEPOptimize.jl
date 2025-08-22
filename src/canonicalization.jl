@@ -3,7 +3,7 @@
 """
     cleanup_two_measurements!(ops,num_pairs)
 
-    Remove unnecessary measurements (back to back on the same qubit)
+Remove unnecessary measurements (back to back on the same qubit)
 """
 function cleanup_two_measurements!(ops,num_pairs)
     # This starts as [false,false...] for each pair/qubit.
@@ -39,7 +39,7 @@ end
 """
     get_used_qubits(ops)
 
-    Get a Set of all qubits that are affected by the ops.
+Get a Set of all qubits that are affected by the ops.
 """
 function get_used_qubits(ops)
     # for each op, get its affectedqubits. (map ops to qubits)
@@ -50,15 +50,16 @@ function get_used_qubits(ops)
 end
 
 """
-    cleanup_untargetted_pairs!(ops,num_pairs,num_purified)
+    unsafe_cleanup_untargeted_pairs!(ops,num_pairs,num_purified)
 
-    Check if the circuit has an unused qubit (technically a pair), if so, add a random two qubit Bell preserving gate `CNOTPerm` and coincidence measure in a random basis, ie, use it in a "probably" good way.
+UNSAFE
+Check if the circuit has an unused qubit (technically a pair), if so, add a random two qubit Bell preserving gate `CNOTPerm` and coincidence measure in a random basis, ie, use it in a "probably" good way.
 """
-function cleanup_untargetted_pairs!(ops,num_pairs,num_purified)
+function unsafe_cleanup_untargeted_pairs!(ops,num_pairs,num_purified)
     if num_pairs <= num_purified 
         # assumption for adding CNOTPerms.
         # if the user wants it anyway, just warn and return 
-        @warn "Not enough pairs - skipping canonicalization step cleanup_untargetted_pairs!"
+        @warn "Not enough pairs - skipping canonicalization step cleanup_untargeted_pairs!"
         return ops
     end
 
@@ -94,7 +95,7 @@ end
 """
     cleanup_measurements_on_top_qubits!(ops,num_purified)
 
-    Checks for and removes any measurements on purified pairs
+Checks for and removes any measurements on purified pairs
 """
 function cleanup_measurements_on_top_qubits!(ops,num_purified)
     return filter!(op-> 
@@ -105,11 +106,12 @@ function cleanup_measurements_on_top_qubits!(ops,num_purified)
 end
 
 """
-    cleanup_nonmeasurement_last_steps!(ops,num_pairs,num_purified)
+    unsafe_cleanup_nonmeasurement_last_steps!(ops,num_pairs,num_purified)
 
+UNSAFE
 If there is a non-measurement in the last step of a non-purified pair, add random coincidence measurements.
 """
-function cleanup_nonmeasurement_last_steps!(ops,num_pairs,num_purified)
+function unsafe_cleanup_nonmeasurement_last_steps!(ops,num_pairs,num_purified)
      if num_pairs <= num_purified 
         @warn "Not enough pairs - skipping canonicalization step cleanup_nonmeasurement_last_steps!"
         return ops
@@ -150,21 +152,28 @@ function cleanup_nonmeasurement_last_steps!(ops,num_pairs,num_purified)
 end
 
 """
-    canonicalize_cleanup!(pop::Population,num_pairs,num_purified)
+    canonicalize_cleanup!(pop::Population,num_pairs,num_purified; 
+    safe=true # true to only improve circuits, false to include canonicalizations that may make some circuits worse/make experimental changes to try to improve them
+    )
 
-    Apply all of the canonicalization cleanup methods to a population with tmap.
+Apply all of the canonicalization cleanup methods to a population with tmap. Defaults to safe canonicalizations. 
 """
-function canonicalize_cleanup!(pop::Population,num_pairs,num_purified)
-    function cleanup!(indiv)
-        cleanup_two_measurements!(indiv.ops,num_pairs)
-        cleanup_untargetted_pairs!(indiv.ops,num_pairs,num_purified)
+function canonicalize_cleanup!(pop::Population,num_pairs,num_purified; 
+    safe=true # :all (include canonicalizations that may make some circuits worse/make experimental changes to try to improve) or :safe (only improve circuits)
+    )
+    # Function to change the ops based on the canonicalizations requested
+    cleanup! = safe ?
+    (indiv) -> begin # safe is true
+        # Safe canonicalization
         cleanup_measurements_on_top_qubits!(indiv.ops,num_purified)
-        cleanup_nonmeasurement_last_steps!(indiv.ops,num_pairs,num_purified)
-    end
+        cleanup_two_measurements!(indiv.ops,num_pairs)
+    end : (indiv) -> begin # safe is false
+        # Unsafe canonicalization (plus safe checks)
+        cleanup_measurements_on_top_qubits!(indiv.ops,num_purified)
+        cleanup_two_measurements!(indiv.ops,num_pairs)
+        unsafe_cleanup_nonmeasurement_last_steps!(indiv.ops,num_pairs,num_purified)
+        unsafe_cleanup_untargeted_pairs!(indiv.ops,num_pairs,num_purified)
+    end 
+    
     tmap(cleanup!, pop.individuals)
 end
-
-# notes from qevo.py
-# def assert_is_good(ops):
-#     return (not isinstance(ops[0], Measurement)
-#         and not contains_nonA_measurements(ops)

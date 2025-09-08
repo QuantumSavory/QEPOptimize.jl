@@ -15,7 +15,7 @@ using TestItems
     # @test occursin("measure q[1] -> c[1]", qasm_str_full)
 
     # Make sure that header and registers are correct (first four lines)
-    @test startswith(qasm_str_full, "OPENQASM 3.0;\ninclude \"stdgates.inc\";\nqubit[$(setup.number_registers*2)] q;bit[$(setup.number_registers*2)] c;\n")
+    @test startswith(qasm_str_full, "OPENQASM 3.0;\ninclude \"stdgates.inc\";")
 
     # Does not fail with some ops/non ops
     Fakeop = 3

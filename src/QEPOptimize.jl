@@ -27,5 +27,7 @@ include("performance_eval.jl")
 include("mutate.jl")
 include("evolve.jl")
 include("analysis.jl")
+include("qasm_translation.jl")
+
 
 end

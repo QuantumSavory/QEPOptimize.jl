@@ -210,20 +210,21 @@ to_qasm(op::sCNOT) = "cx q[$(op.q1)], q[$(op.q2)]\n"
 
 """
     to_qasm(circ, registers::Int,purified_pairs::Int;comments=true,entanglement=define_Φ⁺_qasm)
-Convert Purification circuit to OPENQASM 2.0. Need to supply the circuit (vector/list of ops), total register amount, purified pair amount, and optionally ;comments=false to turn off comments.
+Convert Purification circuit to OPENQASM 3.0. Need to supply the circuit (vector/list of ops), total register amount, purified pair amount, and optionally ;comments=false to turn off comments.
 """
 function to_qasm(circ, registers::Int,purified_pairs::Int;comments=true,entanglement=define_Φ⁺_qasm)
     # Should be some pure pairs, and need at least as many regs as pure pairs.
     @assert purified_pairs > 0 && purified_pairs <= registers
 
     # Get Header
-    qasm_str = "OPENQASM 2.0;\ninclude \"qelib1.inc\";\n" # TODO: move to constant?
+    qasm_str = "OPENQASM 3.0;\ninclude \"stdgates.inc\";\n" # TODO: move to constant?
 
     # helper method to simply syntax: 'append to string'
     add(s::String) = qasm_str *= s
 
-    # registers
-    add("qreg q[$(registers*2)];creg c[$(registers*2)];\n\n")
+    # registers, and reset qubits
+    add("qubit[$(registers*2)] q;\nreset q;\nbit[$(registers*2)] c;\n\n")
+
 
     # Define entanglement (defines the 'entangle' operation to be used to make pairs)
     add(entanglement())
@@ -238,41 +239,18 @@ function to_qasm(circ, registers::Int,purified_pairs::Int;comments=true,entangle
         add(entangle_qasm(2i-2, 2i-1)) # Create Bell pairs
     end
 
-    # Add operations. Keep track of the operations, since we need to 're-entangle' physical qubits sometimes after measurement, but not at the end of the circuit.
-    # ops_per_pair_left = zeros(registers) # each index (1,2,3..) is the PAIR index, *not* the actual qasm register index!
-    # # populate the 'ops_left' array
-    # for op in circ
-    #     for pair in affectedqubits(op)
-    #         @assert pair <= registers # out of bounds check
-    #         ops_per_pair_left[pair] += 1
-    #     end
-    # end
+    # Add operations. 
+    # TODO: Keep track of the operations, since we need to 're-entangle' physical qubits sometimes after measurement, but not at the end of the circuit.
     for (i,op) in enumerate(circ) # Now add the ops to the qasm output
-        # Add some space inbetween for readability
-        add("\n")
+        add("\n") # Add some space inbetween for readability
         comments && add("// Operation $(i): $(op)\n")
         # this is a hack, i need to fix this (issue around affectedqubits() )
         if isa(op,BellMeasure)
+            # If it is a measurement, re-entangle (tell the function to manage )
             add(to_qasm(op;re_entangle=(pair)->entangle_qasm(2*pair-2, 2*pair-1)))
         else
             add(to_qasm(op))
         end
-        # decrement the pair_left array
-        # currently_affectedqubits = affectedqubits(op)
-        # for pair in currently_affectedqubits
-        #     ops_per_pair_left[pair] -= 1
-        # end   
-
-        # Decide if we need to 're entangle' 
-        # only do so if:
-        # if should_re_entangle_after(op) # this function is dispatched as true for this type of operation
-        #     for pair in currently_affectedqubits # for all of the relevant qubits,
-        #         # if this qubit is used in the future (ops left is not 0)
-        #         # then, finally, re-entangle.
-        #         ops_per_pair_left[pair] != 0 && add(entangle_qasm(2*pair-2, 2*pair-1)) # TODO: write unit tests for the edge cases of this (ops after measurement, no ops after measurement, multi-ops after measurement, multi-measurement with ops after/none after etc...)
-        #     end
-        # end
-
     end
 
     # pairs are now 'purified' so remind which ones. The logic results in one pair showing (0,1), and multiple pairs showing [(0,1),(2,3)...]

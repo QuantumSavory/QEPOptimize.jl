@@ -1,14 +1,5 @@
 using TestItems
 
-# No longer using these TODO 
-# @testitem "qasm bell state preparation" begin
-#     using QEPOptimize: Φ⁺_qasm, Ψ⁺_qasm, Φ⁻_qasm, Ψ⁻_qasm
-#     @test Φ⁺_qasm(1,2) == "h q[1];\ncx q[1],q[2];\n"
-#     @test Φ⁻_qasm(1,2) == "x q[1];\nh q[1];\ncx q[1],q[2];\n"
-#     @test Ψ⁺_qasm(1,2) == "x q[2];\nh q[1];\ncx q[1],q[2];\n"
-#     @test Ψ⁻_qasm(1,2) == "x q[1];\nh q[1];\ncx q[1],q[2];\nx q[1];\n"
-# end
-
 @testitem "to_qasm basic ops" setup=[setup] begin
     using QEPOptimize:to_qasm
 
@@ -24,7 +15,7 @@ using TestItems
     # @test occursin("measure q[1] -> c[1]", qasm_str_full)
 
     # Make sure that header and registers are correct (first four lines)
-    @test startswith(qasm_str_full, "OPENQASM 2.0;\ninclude \"qelib1.inc\";\nqreg q[$(setup.number_registers*2)];creg c[$(setup.number_registers*2)];\n")
+    @test startswith(qasm_str_full, "OPENQASM 3.0;\ninclude \"stdgates.inc\";\nqubit[$(setup.number_registers*2)] q;bit[$(setup.number_registers*2)] c;\n")
 
     # Does not fail with some ops/non ops
     Fakeop = 3

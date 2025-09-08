@@ -7,3 +7,6 @@ end
     include("../example/optimize.jl")
 end
 
+@testitem "Examples - qasm" begin
+    include("../example/QClifford_to_qasm.jl")
+end

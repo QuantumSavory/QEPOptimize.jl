@@ -1,4 +1,115 @@
+using QuantumClifford
+# Common gates translation (SparseGate)
+# Note: in this code we use 'p/P' as shorthand for the phase gate or sqrt Z. In qasm, this gate is called 's'. We will try to use s when possible to reduce confusion. 
+const tHS = C"-Y 
+               X"
+# X₁ ⟼ - Y
+# Z₁ ⟼ + X
+# [	0.707	0.707im
+# 	0.707	-0.707im	]
+# U(0.500π, 0, 1.500π)
 
+const tplusXminusY = C"X
+                     -Y"
+# X₁ ⟼ + X
+# Z₁ ⟼ - Y
+# [	0.707	-0.707im
+# 	-0.707im	0.707	]
+# U(0.500π, 1.500π, 0.500π)   
+
+const tSH = C"Z
+              Y"
+# X₁ ⟼ + Z
+# Z₁ ⟼ + Y
+# [	0.707	0.707
+# 	0.707im	-0.707im	]
+# U(0.500π, 0.500π, 1.000π)
+
+const tHSZ = C"Y
+               X"         
+# X₁ ⟼ + Y
+# Z₁ ⟼ + X
+# [	0.707	-0.707im
+# 	0.707	0.707im	]
+# U(0.500π, 0, 0.500π)
+
+
+const tSZH = C"Z
+                -Y"
+# X₁ ⟼ + Z
+# Z₁ ⟼ - Y
+# [	0.707	0.707
+# 	-0.707im	0.707im	]
+# U(0.500π, 1.500π, 1.000π)
+
+const tSZ = C"-Y    
+                Z"
+# X₁ ⟼ - Y
+# Z₁ ⟼ + Z
+# [	1.000	0
+# 	0	-1.000im	]
+# U(0, 0, 1.500π)
+
+const tSHS =  C"X 
+                Y"
+# X₁ ⟼ + X
+# Z₁ ⟼ + Y
+# [	0.707	0.707im
+# 	0.707im	0.707	]
+# U(0.500π, 0.500π, 1.500π)
+
+
+# common single-qubit sparsegates to qasm, only gate name
+single_SparseGate_to_qasm = Dict(
+    tHS =>"hs",
+    tplusXminusY =>"plusXminusY",
+    tSH =>"sh",
+    tHSZ =>"hsz",
+    tSZH =>"szh",
+    tSZ =>"sz",
+    tSHS =>"shs",
+    tHadamard => "h",
+    tPhase => "s"
+)
+
+double_SparseGate_to_qasm = Dict(
+    tCNOT => "cx",
+    tSWAP => "swap",
+    tCPHASE => "cz"
+)
+
+# Helper for warnings and errors when transpiling
+function warn_undefined_gate(op::SparseGate{QuantumClifford.Tableau{Vector{UInt8}, Matrix{UInt64}}})
+    @warn "Op: $(op.cliff)\nNot converted to qasm, ignoring"
+    # Put a verbose error in a comment, showing tableau form
+    return "// UNDEFINED GATE ON $(op.indices)\n$(replace(string("// ", op.cliff),"\n" => "\n// "))\n"
+end
+
+# this will only deal with sparseops (tableau form)
+function to_qasm(op::SparseGate{QuantumClifford.Tableau{Vector{UInt8}, Matrix{UInt64}}})
+    # ignore identity
+    if op.cliff == tId1
+        return ""
+    end
+    # Single qubit gate
+    if op.cliff.tab.nqubits == 1
+        gate = get(single_SparseGate_to_qasm, op.cliff,0)
+        if gate == 0
+            warn_undefined_gate(op)
+        else
+            return "$gate q[$(op.indices[1])];\n"
+        end 
+    # Two qubit gate
+    elseif op.cliff.tab.nqubits == 2
+        gate = get(double_SparseGate_to_qasm,op.cliff,0)
+        if gate == 0
+            warn_undefined_gate(op)
+        else
+            return "$gate q[$(op.indices[1])], q[$(op.indices[2])];\n"
+        end 
+    end
+
+end
 ### Output to QASM notes
 # Do operations on only one of the register in the pair 'alice only'
 # Entanglement : custom op. 'generate ent.' Leave for the user to define
@@ -52,7 +163,7 @@ const good_perm_qc = ( # From the appendix of Optimized Entanglement Purificatio
     (ph*ph,hp*hp*hp*hp),
     (ph,hp*hp),
     (h*ph,p*hp)
-)"""
+)""" 
 # translate this to qasm:
 h(q::Int) = "h q[$q];\n"
 p(q::Int) = "s q[$q];\n" 
@@ -75,6 +186,8 @@ const good_perm_qasm = (
     (h×ph,p×hp)
 )
 
+to_qasm(gate::CNOTPerm) = reduce((str, op) -> str*to_qasm(op),toQCcircuit(gate);init="");
+
 """
     to_qasm(gate::CNOTPerm)
 This is from BPGates:
@@ -92,7 +205,7 @@ and having to deal with sparsegate interpretation, we do this:
 BPGates.CNOTPerm -> QASM, which means we will skip using toQCcircuit. 
 We can hack this by making our own 'good_perm_qc' (good_perm_qasm) the same as how it is done in BPGates, except swapping out the gate definitions (h, p, hp, ph...) with the same QASM ones.
 """
-function to_qasm(gate::CNOTPerm)
+function deprecated_to_qasm(gate::CNOTPerm)
     return reduce(*,[
         good_perm_qasm[gate.single1][1](gate.idx1*2-1),
         good_perm_qasm[gate.single1][2](gate.idx1*2),
@@ -146,7 +259,7 @@ function to_qasm(circ, registers::Int,purified_pairs::Int;comments=true,entangle
     @assert purified_pairs > 0 && purified_pairs <= registers
 
     # Get Header
-    qasm_str = "OPENQASM 3.0;\ninclude \"stdgates.inc\";\n" # TODO: move to constant?
+    qasm_str = "OPENQASM 3.0;\ninclude \"stdgates.inc\";\ninclude \"qcliffordgates.inc\";\n" # TODO: move to constant?
 
     # helper method to simply syntax: 'append to string'
     add(s::String) = qasm_str *= s

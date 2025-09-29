@@ -6,7 +6,7 @@
 
 //  X₁ ⟼ - Y
 //  Z₁ ⟼ + X
-gate hp q {U(π/2, 0, 1.5*π) q;}
+gate hs q {U(π/2, 0, 1.5*π) q;}
 
 //  X₁ ⟼ + X
 //  Z₁ ⟼ - Y
@@ -14,21 +14,21 @@ gate plusXminusY q {U(π/2, 1.5*π, π/2) q;}
 
 //  X₁ ⟼ + Z
 //  Z₁ ⟼ + Y
-gate ph q {U(π/2, π/2, π) q;}
+gate sh q {U(π/2, π/2, π) q;}
 
 //  X₁ ⟼ + Z
 //  Z₁ ⟼ - Y
-gate pzh q {U(π/2, 1.5*π, π) q;}
+gate szh q {U(π/2, 1.5*π, π) q;}
 
 //  X₁ ⟼ + X
 //  Z₁ ⟼ + Y
-gate php q {U(π/2, π/2, 1.5*π) q;}
+gate shs q {U(π/2, π/2, 1.5*π) q;}
 
 //  X₁ ⟼ - Y
 //  Z₁ ⟼ + Z
-gate pz q {U(0, 0, 1.5*π) q;}
+gate sz q {U(0, 0, 1.5*π) q;}
 
 //  X₁ ⟼ + Y
 //  Z₁ ⟼ + X
-gate hpz q {U(π/2, 0, π/2) q;}
+gate hsz q {U(π/2, 0, π/2) q;}
 

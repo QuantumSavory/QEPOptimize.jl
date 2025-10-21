@@ -305,3 +305,8 @@ end
 
 # ignore any noise operations (which should not be in the circuit anyway, but might be) TODO: convert noisy ops to non-noisy ops
 to_qasm(op::PauliNoise) = ""
+
+# Helper function to replace 'include qcliffordgates.inc;' with the actual file in a qasm string 
+function place_qcliffordgates_lib(qasm)
+    return replace(qasm, "include \"qcliffordgates.inc\";" => read("lib/qcliffordgates.inc", String))
+end

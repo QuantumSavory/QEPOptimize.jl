@@ -14,13 +14,15 @@ function to_qasm(op::SparseGate{QuantumClifford.Tableau{Vector{UInt8}, Matrix{UI
     if op.cliff == tId1
         return ""
     end
+    # these gates will be in julia formatting, but on qubit indicies [1,3,5...]
+    # we need to move them down 1 to reach qasm qubit indicies [0,2,4,...]
     # Single qubit gate
     if op.cliff.tab.nqubits == 1
         gate = get(single_SparseGate_to_qasm, op.cliff,0)
         if gate == 0
             warn_undefined_gate(op)
         else
-            return "$gate q[$(op.indices[1])];\n"
+            return "$gate q[$(op.indices[1]-1)];\n"
         end 
     # Two qubit gate
     elseif op.cliff.tab.nqubits == 2
@@ -28,7 +30,7 @@ function to_qasm(op::SparseGate{QuantumClifford.Tableau{Vector{UInt8}, Matrix{UI
         if gate == 0
             warn_undefined_gate(op)
         else
-            return "$gate q[$(op.indices[1])], q[$(op.indices[2])];\n"
+            return "$gate q[$(op.indices[1]-1)], q[$(op.indices[2]-1)];\n"
         end 
     end
 
@@ -61,17 +63,19 @@ entangle_qasm(q1::Int,q2::Int) = "entangle q[$(q1)],q[$(q2)];\n"
 # Ψ⁻_qasm(q1::Int,q2::Int) = "$(Φ⁻_qasm(q1,q2))x q[$(q1)];\n"
 
 # Default case
-to_qasm(op) = "$(op) Not implemented\n"
+to_qasm(op) = "// $(op) Not implemented\n"
 
 # QuantumClifford Measurements 
 # qasm: 'measure q -> b;' means measure qbit q in the z basis and record to bit b.
 # TODO: Should each qbit return to the previous basis after being transformed? Ie, after performing hadamard and measure to measure in X, do inverse hadamard?
 # Measurement in X basis. Hadamard, measure Z
-to_qasm(op::sMX) = "h q[$(op.qubit)];\nmeasure q[$(op.qubit)] -> c[$(op.bit)];\n"
+# Each meas has bit and qubit indicies of pairs in julia format [1,2,3...]
+# We need to map them to pairs, qasm format [0,2,4,6...]
+to_qasm(op::sMX) = "h q[$((op.qubit-1)*2)];\nmeasure q[$((op.qubit-1)*2)] -> c[$((op.bit-1)*2)];\n"
 # Measurement in Y basis. S dagger, Hadamard, measure Z
-to_qasm(op::sMY) = "sdg q[$(op.qubit)];\nh q[$(op.qubit)];\nmeasure q[$(op.qubit)] -> c[$(op.bit)];\n"
+to_qasm(op::sMY) = "sdg q[$((op.qubit-1)*2)];\nh q[$((op.qubit-1)*2)];\nmeasure q[$((op.qubit-1)*2)] -> c[$((op.bit-1)*2)];\n"
 # Measurement in Z basis (normal measure)
-to_qasm(op::sMZ) = "measure q[$(op.qubit)] -> c[$(op.bit)];\n"
+to_qasm(op::sMZ) = "measure q[$((op.qubit-1)*2)] -> c[$((op.qubit-1)*2)];\n"
 
 """ 
 Equivalent section from BPGates: 
@@ -112,34 +116,6 @@ const good_perm_qasm = (
 to_qasm(gate::CNOTPerm) = reduce((str, op) -> str*to_qasm(op),toQCcircuit(gate);init="");
 
 """
-    to_qasm(gate::CNOTPerm)
-This is from BPGates:
-    function toQCcircuit(gate::CNOTPerm)
-    return [
-        SparseGate(good_perm_qc[gate.single1][1], (gate.idx1*2-1,)),
-        SparseGate(good_perm_qc[gate.single1][2], (gate.idx1*2,)),
-        SparseGate(good_perm_qc[gate.single2][1], (gate.idx2*2-1,)),
-        SparseGate(good_perm_qc[gate.single2][2], (gate.idx2*2,)),
-        sCNOT(gate.idx1*2-1, gate.idx2*2-1),
-        sCNOT(gate.idx1*2, gate.idx2*2)
-    ]       
-Instead of doing: BPGates.CNOTPerm -> SparseGate -> QASM,
-and having to deal with sparsegate interpretation, we do this:
-BPGates.CNOTPerm -> QASM, which means we will skip using toQCcircuit. 
-We can hack this by making our own 'good_perm_qc' (good_perm_qasm) the same as how it is done in BPGates, except swapping out the gate definitions (h, p, hp, ph...) with the same QASM ones.
-"""
-function deprecated_to_qasm(gate::CNOTPerm)
-    return reduce(*,[
-        good_perm_qasm[gate.single1][1](gate.idx1*2-1),
-        good_perm_qasm[gate.single1][2](gate.idx1*2),
-        good_perm_qasm[gate.single2][1](gate.idx2*2-1),
-        good_perm_qasm[gate.single2][2](gate.idx2*2),
-        to_qasm(sCNOT(gate.idx1*2-1, gate.idx2*2-1)),
-        to_qasm(sCNOT(gate.idx1*2, gate.idx2*2))
-    ])
-end
-
-"""
     to_qasm(gate::BellMeasure)
 BellMeasure to qasm function, similar method to CNOTPerm
 Equivalent function from BPGates to QuantumClifford:
@@ -166,7 +142,9 @@ function to_qasm(gate::BellMeasure;re_entangle=nothing)
 end
 
 # Normal CNOT
-to_qasm(op::sCNOT) = "cx q[$(op.q1)], q[$(op.q2)]\n"
+# these gates will be in julia formatting, but on qubit indicies [1,3,5...]
+# we need to move them down 1 to reach qasm qubit indicies [0,2,4,...]
+to_qasm(op::sCNOT) = "cx q[$(op.q1-1)], q[$(op.q2-1)];\n"
 
 # To keep track of whether or not to re-entangle after some operations 
 # should_re_entangle_after(op) = false
@@ -208,7 +186,19 @@ function to_qasm(circ, registers::Int,purified_pairs::Int;comments=true,entangle
     # TODO: Keep track of the operations, since we need to 're-entangle' physical qubits sometimes after measurement, but not at the end of the circuit.
     for (i,op) in enumerate(circ) # Now add the ops to the qasm output
         add("\n") # Add some space inbetween for readability
-        comments && add("// Operation $(i): $(op)\n")
+        if comments
+            op_type = typeof(op)
+            # Try to extract qubit indices if possible
+            qubit_info = ""
+            if hasproperty(op, :q1) && hasproperty(op, :q2)
+                qubit_info = " (q$(op.q1), q$(op.q2))"
+            elseif hasproperty(op, :q1)
+                qubit_info = " (q$(op.q1))"
+            elseif hasproperty(op, :sidx)
+                qubit_info = " (pair $(op.sidx))"
+            end
+            add("// Operation $(i): $(op_type)$(qubit_info)\n")
+        end
         # this is a hack, i need to fix this (issue around affectedqubits() )
         if isa(op,BellMeasure)
             # If it is a measurement, re-entangle (tell the function to manage )
@@ -218,6 +208,10 @@ function to_qasm(circ, registers::Int,purified_pairs::Int;comments=true,entangle
         end
     end
 
+    # Check for special characters that cannot be rendered, replace them with placeholders
+    # Apply the replacement function to the QASM string
+    qasm_str = replace_special_chars(qasm_str)
+    
     # pairs are now 'purified' so remind which ones. The logic results in one pair showing (0,1), and multiple pairs showing [(0,1),(2,3)...]
     add("\n// Entangled, purified pairs: $(purified_pairs == 1 ? (0, 1) : [(2i-2, 2i-1) for i in 1:purified_pairs])\n")
 
@@ -226,10 +220,29 @@ function to_qasm(circ, registers::Int,purified_pairs::Int;comments=true,entangle
     return qasm_str
 end
 
+
+
 # ignore any noise operations (which should not be in the circuit anyway, but might be) TODO: convert noisy ops to non-noisy ops
 to_qasm(op::PauliNoise) = ""
 
-# Helper function to replace 'include qcliffordgates.inc;' with the actual file in a qasm string 
-function place_qcliffordgates_lib(qasm)
-    return replace(qasm, "include \"qcliffordgates.inc\";" => read("lib/qcliffordgates.inc", String))
+"""
+    replace_special_chars(qasm_str::String)
+
+Replace special characters in QASM strings that might cause rendering issues.
+Currently handles:
+- Superscripts and subscripts (numbers 1-2) converted to standard ASCII
+"""
+function replace_special_chars(qasm_str::String)
+    # Handle superscripts and subscripts (only numbers 1-2)
+    bad_char_map =  Dict(
+        '¹' => "1", '²' => "2",
+        '₁' => "1", '₂' => "2",
+        '⟼' => "->"
+    )
+    
+    # Replace superscripts
+    for (badchar, goodchar) in bad_char_map
+        qasm_str = replace(qasm_str, badchar => goodchar)
+    end
+    return qasm_str
 end

@@ -19,11 +19,13 @@ end
 # ╔═╡ 353e15de-0a9b-4107-a265-28953e1deee2
 # ╠═╡ show_logs = false
 begin
+	# Uncomment to use local env/bypass pluto.jl's pkg manager
 	using Pkg
 	Pkg.pkg"add Revise, CairoMakie, PlutoUI, Quantikz, BPGates, QuantumClifford, ProgressLogging"
-	#using Revise
-	#Pkg.add(url="https://github.com/QuantumSavory/QEPOptimize.jl.git")
+	using Revise
 	Pkg.develop(path="../")
+
+	
 	using CairoMakie
 	using PlutoUI
 	using PlutoUI:confirm, Slider
@@ -78,7 +80,7 @@ md"""
 
 ### Error Parameters
 
-* Network fidelity: $(Child( "network_fidelity", PlutoUI.Slider(0.:0.002:0.3, default=0.1, show_value=true)))
+* Network fidelity: $(Child( "network_fidelity", PlutoUI.Slider(0.:0.002:1, default=0.9, show_value=true)))
 
 * Gate error X: $(Child("paulix",PlutoUI.Slider(0.:0.002:0.1, default=0.01, show_value=true)))
 
@@ -88,7 +90,7 @@ md"""
 
 ## Simulation Parameters
 
-* Number of Simulations: $(Child("num_simulations", PlutoUI.Slider(100:100:5000, default=1000, show_value=true)))
+* Number of Simulations: $(Child("num_simulations", PlutoUI.Slider(100:100:10000, default=1000, show_value=true)))
 
 * Max performance calculations per circuit: $(Child("max_perf_calcs", PlutoUI.Slider(1:1:50, default=10, show_value=true)))
 
@@ -148,7 +150,6 @@ begin
 		max_performance_calcs=c.max_perf_calcs,
 		config[]...
 	)
-
 	evolution_steps_ref[] = c.evolution_steps
 end;
 
@@ -169,7 +170,7 @@ begin
 		# check if values have been set
 		pop[], evolution_steps_ref[], step_config[];
 	catch
-		throw("Config not set")
+		throw("Config not set - click Update Config")
 	end
 	_, fitness_history, transition_counts_matrix, transition_counts_keys = multiple_steps_with_history!(pop[], evolution_steps_ref[]; step_config[]...); 
 	

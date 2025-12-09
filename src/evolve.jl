@@ -329,6 +329,8 @@ function initialize_pop!(
 
     number_registers >= 2 || throw(ArgumentError("number_registers must be >= 2"))
 
+    # Reset Population
+    population.individuals = Vector{Individual}()
     # To help with loading bars with ProgressLogging
     @progress for f in (()-> 
     begin

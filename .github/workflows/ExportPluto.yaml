@@ -2,9 +2,7 @@ name: Export Pluto notebooks
 on:
     push:
         branches:
-            - main
             - master
-            - pluto-export
     workflow_dispatch:
 
 # When two jobs run in parallel, cancel the older ones, to make sure that the website is generated from the most recent commit.

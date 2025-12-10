@@ -1,0 +1,12 @@
+.vscode
+.DS_Store
+qevo
+qevo_optimizer
+QuantumHardware
+BPGates.jl
+Manifest.toml
+meeting_notes.txt
+
+# Coverage files
+*.cov
+*/*.covpluto_state_cache

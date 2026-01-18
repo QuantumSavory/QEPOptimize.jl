@@ -1,7 +1,12 @@
 module QEPOptimize
 
+import Base:+,==
+
 using BPGates
-using BPGates: mctrajectory!, continue_stat, PauliNoise, T1NoiseOp, T2NoiseOp # TODO these should be exported by default
+using BPGates: mctrajectory!, continue_stat, PauliNoise, BellMeasure, CNOTPerm, toQCcircuit, T1NoiseOp, T2NoiseOp
+# TODO (mctrajectory!, continue_stat, PauliNoise) should be exported by default
+
+using QuantumClifford:AbstractMeasurement
 
 using Makie
 
@@ -11,7 +16,13 @@ using Random: randperm
 
 using DataStructures: counter
 
-using OhMyThreads: tmap,tmapreduce
+using OhMyThreads: tmap,tmap!,tmapreduce
+
+using Quantikz:affectedqubits
+
+using ProgressLogging: @progress
+
+using QuantumClifford: SparseGate,Tableau,sCNOT,BellMeasurement,Reset,sMX,sMZ,sMY,Stabilizer,apply!,MixedDestabilizer,AbstractCliffordOperator, AbstractOperation
 
 using Quantikz:affectedqubits
 
@@ -25,5 +36,6 @@ include("performance_eval.jl")
 include("mutate.jl")
 include("evolve.jl")
 include("analysis.jl")
+include("canonicalization.jl")
 
 end

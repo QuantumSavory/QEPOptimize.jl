@@ -89,9 +89,9 @@ md"""
 
 * Measurement Error: $(@bind measurement_error PlutoUI.Slider(0.:0.01:0.5, default=0.1, show_value=true))
 
-* T1 time (s): $(@bind t1 PlutoUI.Slider(0.01:0.01:3, default=1, show_value=true))
+* T1 time (s): $(@bind t1 PlutoUI.Slider(100:1:300, default=100, show_value=true))
 
-* T2 time (s): $(@bind t2 PlutoUI.Slider(0.01:0.01:3, default=1, show_value=true))
+* T2 time (s): $(@bind t2 PlutoUI.Slider(100:1:600, default=150, show_value=true))
 
 ## Simulation Parameters
 

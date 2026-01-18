@@ -87,6 +87,12 @@ md"""
 
 * Gate error Z: $(Child( "pauliz",PlutoUI.Slider(0.:0.002:0.1, default=0.01, show_value=true)))
 
+* Measurement Error: $(@bind measurement_error PlutoUI.Slider(0.:0.01:0.5, default=0.1, show_value=true))
+
+* T1 time (s): $(@bind t1 PlutoUI.Slider(0.01:0.01:3, default=1, show_value=true))
+
+* T2 time (s): $(@bind t2 PlutoUI.Slider(0.01:0.01:3, default=1, show_value=true))
+
 ## Simulation Parameters
 
 * Number of Simulations: $(Child("num_simulations", PlutoUI.Slider(100:100:10000, default=1000, show_value=true)))

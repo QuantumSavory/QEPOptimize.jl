@@ -29,7 +29,7 @@ struct MeasurementError
     p::Float64
 end
 
-"Thermal relaxation error to be applied per time step. Assuming same time step for all operations, same errors for all qubits"
+"Thermal relaxation error to be applied per time step, same error rate for all qubits"
 struct T1T2Noise
     t1::Float64  # T1 time constant
     t2::Float64  # T2 time constant
@@ -37,12 +37,18 @@ struct T1T2Noise
     T1T2Noise(t1,t2,times) = new(t1,t2,times) 
 end
 
+# Somewhat realistic superconducting qubit noise 
+# https://arxiv.org/abs/1210.5799v2
+# in μs
 const DEFAULT_OP_TIMES = Dict(
-    BellMeasure => 1.0,
-    CNOTPerm => 1.0,
-    PauliNoiseBellGate => 1.0,
-    NoisyBellMeasureNoisyReset => 1.0
+    BellMeasure => 0.035,
+    CNOTPerm => 0.025, # cnot: 20ns + a permutation: 5ns
+    PauliNoiseBellGate => 0.005, # single qubit rotation
+    NoisyBellMeasureNoisyReset => 0.075 # meas: 35ns+reset: 40ns
 )
+
+const DEFAULT_T1 = 100
+const DEFAULT_T2 = 200
 
 T1T2Noise(t1::Float64,t2::Float64) = T1T2Noise(t1,t2,DEFAULT_OP_TIMES)
 T1T2Noise(t1::Int,t2::Int) = T1T2Noise(t1,t2,DEFAULT_OP_TIMES)
@@ -155,11 +161,26 @@ function noisify_circuit(error::T1T2Noise, circuit; number_registers)
     return noisy_circuit
 end
     
-# thermal relaxation error from t1 and t2 values, and the time elapsed. From YipiaoWu/QuantumHardware
-function thermal_relaxation_error_rate(t1, t2, gate_time) 
+"""Thermal relaxation error rates (λ₁, λ₂) from t1 and t2 values, and the time elapsed. Includes bounds checks and warnings for unphysical systems (superconducting qubits). Adapted from YipiaoWu/QuantumHardware."""
+function thermal_relaxation_error_rate(t1, t2, gate_time)
+    @assert t1 > 0 "T1 must be > 0, got $t1"
+    @assert t2 > 0 "T2 must be > 0, got $t2"
+    @assert gate_time ≥ 0 "gate_time must be ≥ 0, got $gate_time"
+
+    # Constraint based on non-negative Tᵩ = 1/T₂ - 1/2T₁
+    @assert t2 ≤ 2t1 + 1e-12*max(t1, t2) "Unphysical T2 > 2*T1: T1 = $t1, T2 = $t2"
+
     λ₁ = 1 - exp(-gate_time/t1)
-    t_ϕ = t1*t2 / (2*t1 - t2)
-    λ₂ = 1 - exp(-gate_time/t_ϕ)
+    λ₂ = 1 - exp(-gate_time/t2 + gate_time/(2t1))  # from Ghosh–Fowler–Geller/"Surface code with decoherence..." eq. (3)-(6)
+
+    # Regime checks: large per-step damping is where the Bell/Markov model is weakest, not modeling the now-large coherences
+    r1 = gate_time/t1
+    if r1 > 0.2
+        @warn "gate_time/T1 = $(round(r1, digits=3)); T1 twirled/Markov approximation may be inaccurate (λ₁ ≈ $(round(λ₁, digits=3)))."
+    end
+
+    λ₁ = clamp(λ₁, 0.0, 1.0)
+    λ₂ = clamp(λ₂, 0.0, 1.0)
     return λ₁, λ₂
 end
 

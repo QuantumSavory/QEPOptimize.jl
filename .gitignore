@@ -10,3 +10,5 @@ meeting_notes.txt
 # Coverage files
 *.cov
 */*.cov
+
+plots

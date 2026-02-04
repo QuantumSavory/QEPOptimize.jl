@@ -13,6 +13,7 @@ using TestItems
     
     number_registers = 4
 
+
     starting_length = length(test_ops)
     empty = Individual()
 

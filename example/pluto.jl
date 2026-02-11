@@ -55,8 +55,8 @@ begin
 	const config = Ref{@NamedTuple{num_simulations::Int64, number_registers::Int64, purified_pairs::Int64, code_distance::Int64, pop_size::Int64, noises::Vector{Any}}}()
 	
 	const init_config = Ref{@NamedTuple{start_ops::Int64, start_pop_size::Int64, num_simulations::Int64, number_registers::Int64, purified_pairs::Int64, code_distance::Int64, pop_size::Int64, noises::Vector{Any}}}()
-	
-	const step_config = Ref{@NamedTuple{max_ops::Int64, new_mutants::Int64, p_drop::Float64, p_mutate::Float64, p_gain::Float64, evolution_metric::Symbol, max_performance_calcs::Int64, num_simulations::Int64, number_registers::Int64, purified_pairs::Int64, code_distance::Int64, pop_size::Int64, noises::Vector{Any}}}()
+
+	const step_config = Ref{@NamedTuple{max_ops::Int64, new_mutants::Int64, p_drop::Float64, p_mutate::Float64, p_gain::Float64, evolution_metric::Symbol, max_performance_calcs::Int64, max_simulations::Int64, num_simulations::Int64, number_registers::Int64, purified_pairs::Int64, code_distance::Int64, pop_size::Int64, noises::Vector{Any}}}()
 
 	const evolution_steps_ref = Ref{Int64}()
 
@@ -90,6 +90,8 @@ md"""
 ## Simulation Parameters
 
 * Number of Simulations: $(Child("num_simulations", PlutoUI.Slider(100:100:10000, default=1000, show_value=true)))
+
+* Max number of Simulations: $(Child("max_simulations", PlutoUI.Slider(100:100:10000, default=5000, show_value=true)))
 
 * Max performance calculations per circuit: $(Child("max_perf_calcs", PlutoUI.Slider(1:1:50, default=10, show_value=true)))
 
@@ -147,6 +149,7 @@ begin
 		p_gain=c.p_gain,
 		evolution_metric=c.evolution_metric,
 		max_performance_calcs=c.max_perf_calcs,
+		max_simulations=c.max_simulations,
 		config[]...
 	)
 	evolution_steps_ref[] = c.evolution_steps
@@ -2228,13 +2231,13 @@ version = "3.6.0+0"
 # ╔═╡ Cell order:
 # ╟─8fc5cb18-70cc-4846-a62b-4cda69df12b0
 # ╠═353e15de-0a9b-4107-a265-28953e1deee2
-# ╟─610c0135-3a8e-4676-aa5f-9ca76546dd98
+# ╠═610c0135-3a8e-4676-aa5f-9ca76546dd98
 # ╟─6419143d-dc3a-47f0-8791-004e57b911c1
 # ╟─a892e297-7223-4d1a-b772-5f4ca5c64339
 # ╟─dad1728c-c341-44cc-88e6-d26ca1815a30
-# ╟─cef70317-fc58-42b3-987b-a454064f0113
+# ╠═cef70317-fc58-42b3-987b-a454064f0113
 # ╟─3d17bc74-fa91-410c-b060-b15eae7a564b
-# ╟─c09c7bb8-1d08-45da-81ca-0cf1d1985b91
+# ╠═c09c7bb8-1d08-45da-81ca-0cf1d1985b91
 # ╟─451be68d-b0bb-4b1b-b7fa-5c39618f95de
 # ╟─988e9e99-cf93-46a3-be59-11c11e316b07
 # ╟─1b6a9400-9d3b-42f1-a83f-c16f8134cb93

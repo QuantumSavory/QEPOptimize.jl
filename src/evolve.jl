@@ -83,6 +83,7 @@ end
     p_gain=0.1,
     evolution_metric=:logical_qubit_fidelity,
     max_performance_calcs=10
+    max_simulations=5000
 )
 
 Step any given amount of times, keeping track of fitness and mutation type (survivior, drop_op, etc...)
@@ -102,7 +103,8 @@ function multiple_steps_with_history!(
     p_mutate=0.1,
     p_gain=0.1,
     evolution_metric=:logical_qubit_fidelity,
-    max_performance_calcs=10
+    max_performance_calcs=10,
+    max_simulations=5000
 )
     # Edge case: current population not the same size as requested pop, likely to happen in the pluto notebook where pop_size can be changing alot
     if length(population.individuals) != pop_size
@@ -129,12 +131,16 @@ function multiple_steps_with_history!(
 
     # Keep track of when throttling (fidelity is 1 for some individuals) occurs
     throttling_warned = 0
-
+    # For dynamic increase of simulation count. starts at 'num_simulations', and increases to 'max_simulations' only if needed by undetermined fitness, the chunk size is regulated by the amount of throttle warnings, which should be fine at somewhere around 10. this would mean that it would take at least 10 steps before the max simulation count is reached.
+    throttling_warned = 0
+    simulation_step_size = round(Int,(max_simulations - num_simulations)/THROTTLE_WARNINGS)
+    current_sims = num_simulations # we will edit parameters in this
+    
     @progress for i in 1:steps
         step!(population; max_ops,
             number_registers,
             purified_pairs,
-            num_simulations,
+            num_simulations=current_sims,
             pop_size,
             code_distance,
             noises,
@@ -146,13 +152,25 @@ function multiple_steps_with_history!(
             max_performance_calcs,
             safe_canonicalize = i > steps/2  # first half of steps, do unsafe canonicalization. Then, stick to safe.
         )
-  
-        # Check to make sure that the optimizer is not in the 'fitness = 1.0' failure mode
-        if population.individuals[1].fitness == 1.0 && throttling_warned < THROTTLE_WARNINGS
-            throttling_warned += 1
-            @warn "Simulation is throttled: Increase simulation count, or decrease new mutants to fix. Top circuit has fitness = 1.0"
-            # If fitness is 1, then all of the simulations done to evaluate a circuit show no errors. This implies the circuit is good, but stops the optimizer from performing well. Increasing simulation count can fix this issue
-            # but, decreasing new mutants will also fix the issue. This is because fewer new circuits need to be simulated, causing more simulations on the current circuits to get a better non-1.0 fidelity. 
+
+        # If fitness is 1, then all of the simulations done to evaluate a circuit show no errors. This implies the circuit is good, but stops the optimizer from performing well. Increasing simulation count can fix this issue
+        # but, decreasing new mutants will also fix the issue. This is because fewer new circuits need to be simulated, causing more simulations on the current circuits to get a better non-1.0 fidelity. 
+        if population.individuals[1].fitness == 1.0 
+            if max_simulations <= num_simulations && throttling_warned < THROTTLE_WARNINGS
+                # User has not set max sim, default to basic warning 
+                throttling_warned += 1
+                @warn "Simulation is throttled, set max_simulations for dynamic increase of simulation count or increase num_simulations to fix. Top circuit has fitness = 1.0"
+            elseif throttling_warned == THROTTLE_WARNINGS
+                # reached the max sim count
+                current_sims = max_simulations
+                @warn "Simulation is throttled: Please increase max simulation count. Simulation count set to $(current_sims)/$(max_simulations)"
+                throttling_warned += 1
+            elseif throttling_warned < THROTTLE_WARNINGS
+                # sim throttled, still have warnings left. Increase sim count and warn
+                current_sims += simulation_step_size
+                @warn "Simulation is throttled: Increased simulation count to $(current_sims)/$(max_simulations)"
+                throttling_warned += 1
+            end
         end
 
         fitness_history[i+1,:] = [i.fitness for i in population.individuals]

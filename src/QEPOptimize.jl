@@ -3,9 +3,8 @@ module QEPOptimize
 import Base:+,==
 
 using BPGates
-using BPGates: mctrajectory!, continue_stat, PauliNoise, BellMeasure, CNOTPerm, toQCcircuit
+using BPGates: mctrajectory!, continue_stat, PauliNoise, BellMeasure, CNOTPerm, toQCcircuit, T1NoiseOp, T2NoiseOp
 # TODO (mctrajectory!, continue_stat, PauliNoise) should be exported by default
-
 
 using QuantumClifford:AbstractMeasurement
 
@@ -25,7 +24,7 @@ using ProgressLogging: @progress
 
 using QuantumClifford: SparseGate,Tableau,sCNOT,BellMeasurement,Reset,sMX,sMZ,sMY,Stabilizer,apply!,MixedDestabilizer,AbstractCliffordOperator, AbstractOperation
 
-export Individual, calculate_performance!, f_in_to_pauli, NetworkFidelity, NetworkPauliNoise, Population, # TODO order these neatly
+export Individual,initialize_pop!, calculate_performance!, f_in_to_pauli, NetworkFidelity, NetworkPauliNoise, MeasurementError, T1T2Noise, Population, # TODO order these neatly
     multiple_steps_with_history!,
     analyze_f_out_vs_f_in, plot_circuit_analysis, plot_fitness_history
 

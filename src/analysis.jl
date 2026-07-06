@@ -4,12 +4,13 @@ function analyze_f_out_vs_f_in(
     number_registers::Int=2,
     purified_pairs::Int=1,
     noises=[PauliNoise(0.01/3, 0.01/3, 0.01/3)],
-    f_ins = [0.01; 0.05:0.05:0.95; 0.99; 0.999]
+    f_ins = [0.01; 0.05:0.05:0.95; 0.99; 0.999],
+    circuit_noise::Union{BPCircuitNoise,Nothing}=nothing
 )
     f_outs = Float64[]
     probs = Float64[]
     for f in f_ins
-        p = calculate_performance!(circuit; num_simulations, noises=[NetworkFidelity(f),noises...], number_registers, purified_pairs)
+        p = calculate_performance!(circuit; num_simulations, noises=[NetworkFidelity(f),noises...], number_registers, purified_pairs, circuit_noise)
         push!(f_outs, p.purified_pairs_fidelity)
         push!(probs, p.success_probability)
     end
@@ -32,7 +33,7 @@ function plot_circuit_analysis(
     axP = Axis(fig[1,2])
     axP.title = "F in vs P"
     for (noises, label) in zip(noise_sets, noise_set_labels)
-        f_ins, f_outs, probs = analyze_f_out_vs_f_in(circuit; num_simulations, number_registers, purified_pairs, noises, f_ins)
+        f_ins, f_outs, probs = analyze_f_out_vs_f_in(circuit; num_simulations, number_registers, purified_pairs, noises, f_ins, circuit_noise)
         lines!(axF, f_ins, f_outs)
         lines!(axP, f_ins, probs; label)
     end

@@ -9,6 +9,14 @@ function f_in_to_pauli(f_in)
     return px, py, pz
 end
 
+function f_in_to_pauli_biased(f_in, (bx, by, bz))
+    p_total = 1 - f_in
+    norm = bx + by + bz
+    px = p_total * bx / norm
+    py = p_total * by / norm
+    pz = p_total * bz / norm
+    return px, py, pz
+end
 
 "apply a given noise process to each operation in the circuit"
 noisify_circuit(noise, circuit; number_registers) = noisify.((noise,), circuit)
@@ -26,16 +34,20 @@ end
 
 "A convenience constructor for unbiased Pauli network noise that results in a Bell pair of given fidelity"
 NetworkFidelity(f) = NetworkPauliNoise(f_in_to_pauli(f)...)
+NetworkFidelity(f, (bx, by, bz)) = NetworkPauliNoise(f_in_to_pauli_biased(f, (bx, by, bz)...))
 
-function noisify_circuit(n::NetworkPauliNoise, circuit; number_registers)
+function noisify_circuit(n::NetworkPauliNoise, circuit; number_registers, circuit_noise::Union{BPCircuitNoise,Nothing}=nothing)
     initial_noise = [PauliNoiseOp(i, n.px, n.py, n.pz) for i in 1:number_registers]
-    return [initial_noise; noisify.((n,), circuit)]
+    network_noisy = [initial_noise; noisify.((n,), circuit)]
+    isnothing(circuit_noise) && return network_noisy
+    return noisify(network_noisy, circuit_noise)
 end
+
 noisify(n::NetworkPauliNoise, b::BellMeasure) = NoisyBellMeasureNoisyReset(b, 0, n.px, n.py, n.pz)
 noisify(n::NetworkPauliNoise, b::NoisyBellMeasureNoisyReset) = NoisyBellMeasureNoisyReset(b.m, b.p, n.px, n.py, n.pz)
 
-
-noisify(n::PauliNoise, c::CNOTPerm) = PauliNoiseBellGate(c, n.px, n.py, n.pz) # TODO reusing the QuantumClifford way of making noisy gates would be more consistent here
+# removing since we already have from bpgates
+#noisify(n::PauliNoise, c::CNOTPerm) = PauliNoiseBellGate(c, n.px, n.py, n.pz) # TODO reusing the QuantumClifford way of making noisy gates would be more consistent here
 
 
 # TODO more types of noise should be implemented

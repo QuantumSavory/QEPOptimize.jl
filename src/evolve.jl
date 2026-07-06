@@ -255,6 +255,7 @@ function simulate_and_sort!(
     number_registers::Int=2, # TODO (low priority) this should be by-default derived from `indiv`
     code_distance::Int=1,
     noises=[NetworkFidelity(0.9)],
+    circuit_noise::Union{BPCircuitNoise,Nothing}=nothing,
     evolution_metric=:logical_qubit_fidelity,
     max_performance_calcs::Int=10
 )
@@ -269,7 +270,8 @@ function simulate_and_sort!(
                 purified_pairs,
                 number_registers,
                 code_distance,
-                noises)
+                noises,
+                circuit_noise)
         end
         
         # Set fitness to whatever performance metric is supplied

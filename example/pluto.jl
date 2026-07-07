@@ -32,7 +32,7 @@ begin
 	using QEPOptimize
 	using QEPOptimize: initialize_pop!, step!, NetworkFidelity, Population, EVOLUTION_METRICS
 	using BPGates
-	using BPGates: PauliNoise, BellMeasure, CNOTPerm
+	using BPGates: PauliNoise, BellMeasure, CNOTPerm, noisify, BPCircuitNoise, PauliNoiseData, T1NoiseData, T2NoiseData
 	using QuantumClifford: SparseGate, sCNOT, affectedqubits, BellMeasurement, Reset, sMX, sMZ, sMY
 end
 
@@ -87,6 +87,20 @@ md"""
 
 * Gate error Z: $(Child( "pauliz",PlutoUI.Slider(0.:0.002:0.1, default=0.01, show_value=true)))
 
+* **Enable Local Circuit Noise:** $(Child("enable_circuit_noisification", PlutoUI.CheckBox(default=true)))
+
+* Active Idle Noise Components: $(Child("active_idles", PlutoUI.MultiCheckBox([
+    :pauli => "Pauli Noise",
+    :t1    => "T1 Decoherence",
+    :t2    => "T2 Dephasing"
+], default=[:t1, :t2])))
+
+* T1 Noise (λ₁): $(Child( "t1_noise", PlutoUI.Slider(0.0:0.001:0.05, default = 0.005, show_value=true)))
+
+* Local T2 Noise (λ₂): $(Child("t2_noise", PlutoUI.Slider(0.0:0.001:0.05, default=0.01, show_value=true)))
+
+* Measurement Flip (p): $(Child("measurement_flip", PlutoUI.Slider(0.0:0.002:0.1, default=0.01, show_value=true)))
+
 ## Simulation Parameters
 
 * Number of Simulations: $(Child("num_simulations", PlutoUI.Slider(100:100:10000, default=1000, show_value=true)))
@@ -124,6 +138,27 @@ md"""
 
 # ╔═╡ cef70317-fc58-42b3-987b-a454064f0113
 begin
+    circuit_noise  = if c.enable_circuit_noisification
+        local_pauli = PauliNoiseData(c.paulix, c.pauliy, c.pauliz)
+        local_t1 = T1NoiseData(c.t1_noise)
+        local_t2 = T1NoiseData(c.t2_noise)
+        idle_vector = BPNoiseData[]
+
+        :pauli in c.active_idles && push!(chosen_idles, local_pauli)
+        :t1    in c.active_idles && push!(chosen_idles, local_t1)
+        :t2    in c.active_idles && push!(chosen_idles, local_t2)
+
+        BPCircuitNoise(
+            single_pair = local_pauli,
+            two_pair    = local_pauli,
+            idle_noise  = isempty(chosen_idles) ? nothing : chosen_idles,
+            measurement = c.measurement_flip
+        )
+        else
+            nothing
+        end
+
+
 	config[] = (
 			num_simulations=c.num_simulations,
 		    number_registers=c.number_registers,
@@ -213,6 +248,7 @@ plot_circuit_analysis(
 	num_simulations=fidelity_num_simulations,
 	config[].number_registers,
 	config[].purified_pairs,
+    circuit_noise=config[].circuit_noise,
     noise_sets=[[PauliNoise(c.paulix, c.pauliy, c.pauliz)],[]],
     noise_set_labels=["with gate noise", "no gate noise"]
 )

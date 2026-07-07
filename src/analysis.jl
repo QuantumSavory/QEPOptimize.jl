@@ -24,7 +24,8 @@ function plot_circuit_analysis(
     purified_pairs::Int=1,
     noise_sets=[[PauliNoise(0.01/3, 0.01/3, 0.01/3)],[]],
     noise_set_labels=[join(string.(noises), " ") for noises in noise_sets],
-    f_ins = [0.01; 0.05:0.05:0.95; 0.99; 0.999]
+    f_ins = [0.01; 0.05:0.05:0.95; 0.99; 0.999],
+    circuit_noise::Union{BPCircuitNoise, Nothing} = nothing
 )
     fig = Figure()
     axF = Axis(fig[1,1])

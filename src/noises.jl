@@ -1,3 +1,7 @@
+
+import BPGates: noisify
+using BPGates: BPCircuitNoise
+
 """
     f_in_to_pauli(f_in)
 

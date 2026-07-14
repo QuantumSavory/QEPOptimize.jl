@@ -22,10 +22,10 @@ function plot_circuit_analysis(
     num_simulations::Int=100000,
     number_registers::Int=2,
     purified_pairs::Int=1,
-    noise_sets = [[], []],
-      noise_set_labels = ["with local circuit noise","without local circuit noise"],
+    noises = [NetworkFidelity(0.9)],
+    noise_set_labels = ["with local circuit noise","without local circuit noise"],
     f_ins = [0.01; 0.05:0.05:0.95; 0.99; 0.999],
-    circuit_noise_sets = Union{BPCircuitNoise,Nothing}[nothing, nothing]
+    circuit_noise::Union{BPCircuitNoise,Nothing} = nothing,
 )
     fig = Figure()
     axF = Axis(fig[1,1])
@@ -33,8 +33,8 @@ function plot_circuit_analysis(
     lines!(axF, [0,1], [0,1], color=:gray50)
     axP = Axis(fig[1,2])
     axP.title = "F in vs P"
-    for (noises,circuit_noise, label) in zip(noise_sets,circuit_noise_sets, noise_set_labels)
-        f_ins, f_outs, probs = analyze_f_out_vs_f_in(circuit; num_simulations, number_registers, purified_pairs, noises, f_ins, circuit_noise)
+    for (label, local_noise) in zip( noise_set_labels,(circuit_noise, nothing),)
+        f_ins, f_outs, probs = analyze_f_out_vs_f_in(circuit; num_simulations, number_registers, purified_pairs, noises, f_ins, circuit_noise=local_noise)
         lines!(axF, f_ins, f_outs)
         lines!(axP, f_ins, probs; label)
     end

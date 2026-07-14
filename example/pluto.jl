@@ -20,20 +20,10 @@ end
 # ╠═╡ show_logs = false
 begin
 	# Uncomment to use local env/bypass pluto.jl's pkg manager
-	using Pkg
+	# using Pkg
 	# Pkg.pkg"add Revise, CairoMakie, PlutoUI, Quantikz, BPGates, QuantumClifford, ProgressLogging"
 	# using Revise
 	# Pkg.develop(path="../")
-	Pkg.add([
-        "Revise",
-        "CairoMakie",
-        "PlutoUI",
-        "Quantikz",
-        "ProgressLogging",
-    ])
-    Pkg.develop(path="/Users/rohan/Desktop/lab_work/QEPOptimize.jl")
-    Pkg.develop(path="/Users/rohan/Desktop/lab_work/BPGates.jl")
-    Pkg.develop(path="/Users/rohan/Desktop/lab_work/QuantumClifford.jl")
 	using CairoMakie
 	using PlutoUI
 	using PlutoUI:confirm, Slider
@@ -253,13 +243,16 @@ Fidelity results for this circuit
 
 # ╔═╡ 81aa21b4-50f0-4695-a9d0-fd998b0c0cc1
 plot_circuit_analysis(
-	best_circuit;
-	num_simulations=fidelity_num_simulations,
-	config[].number_registers,
-	config[].purified_pairs,
-    noise_sets=[[],[]],
-    circuit_noise_sets = Union{BPCircuitNoise,Nothing}[config[].circuit_noise,nothing],
-    noise_set_labels=["with gate noise", "no gate noise"],
+    best_circuit;
+    num_simulations = fidelity_num_simulations,
+    number_registers = config[].number_registers,
+    purified_pairs = config[].purified_pairs,
+    noises = config[].noises,
+    circuit_noise = config[].circuit_noise,
+    noise_set_labels = [
+        "with gate noise",
+        "no gate noise",
+    ],
 )
 
 

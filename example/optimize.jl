@@ -54,9 +54,19 @@ best_circuit = pop.individuals[1]
 
 ##
 
-fig = plot_circuit_analysis(best_circuit; num_simulations=100000, config.number_registers, config.purified_pairs,
-    noise_sets=[[PauliNoise(0.01/3, 0.01/3, 0.01/3)],[]],
-    noise_set_labels=["p=0.01", "p=0"]
+fig = plot_circuit_analysis(
+    best_circuit;
+    num_simulations = 100000,
+    number_registers = config.number_registers,
+    purified_pairs = config.purified_pairs,
+    noises = [NetworkFidelity(0.99)],  
+    circuit_noise = BPCircuitNoise(
+        gate_noise = PauliNoise(0.01/3, 0.01/3, 0.01/3),
+    ),
+    noise_set_labels = [
+        "p = 0.01",
+        "p = 0",
+    ],
 )
 
 display(fig)

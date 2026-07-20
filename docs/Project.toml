@@ -1,0 +1,6 @@
+[deps]
+Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
+QEPOptimize = "9f67e06f-6394-43be-a72d-a2000081c01d"
+
+[compat]
+Documenter = "1"

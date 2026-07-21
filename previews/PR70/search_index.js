@@ -1,0 +1,3 @@
+var documenterSearchIndex = {"docs":
+[{"category":"section","location":"#QEPOptimize.jl","page":"Home","text":"See the demo at doc.quantumsavory.org/QEPOptimize.jl/example/pluto.html\n\nA framework for optimization of entanglement purification circuits based on the BPGates.jl simulator, following methods published in \"Optimized Entanglement Purification\" and \"Faster-than-Clifford simulations of entanglement purification circuits and their full-stack optimization\".\n\nThe examples folder contains a Pluto notebook with a user-friendly UI for generating optimized entanglement distillation circuits and lists how the public API of this library is to be used.","title":"QEPOptimize.jl"}]
+}

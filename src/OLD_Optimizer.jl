@@ -10,7 +10,7 @@ module Optimizer
 # TODO: rewrite gain_op_with_constraints
 
 """
-    Organize the noise in the ciruit. Some noise is in mutate, calculate performance, etc.
+    Organize the noise in the circuit. Some noise is in mutate, calculate performance, etc.
 
     Abstract away noise in initial state and in circuit
 
@@ -43,7 +43,7 @@ module Optimizer
         max_ops::Int                # Limits the number of operations in each individual circuit
 
 
-        1b.  Generic optimizer internals and quantum ciruit specifications
+        1b.  Generic optimizer internals and quantum circuit specifications
         Stored in the 'AdvancedConfiguration' struct
 
         code_distance::Int                              # for logical_qubit_fidelity
@@ -193,7 +193,7 @@ function thermal_relaxation_error_rate(t1, t2, gate_time) # experimental private
 end
 
 # TODO this function does not add thermal noise to the "wait" times in between gates on the qubits that are not acted upon on the current timestep
-function add_thermal_relaxation_noise(circuit, λ₁, λ₂) # experimental private function for intenral use
+function add_thermal_relaxation_noise(circuit, λ₁, λ₂) # experimental private function for internal use
     max_steps = 100
     max_pairs = 4
     time_table = falses(max_steps, max_pairs)   # tracks the activity of each qubit over time
@@ -279,7 +279,7 @@ end
 
 
 ##################################################
-###          initilize polulation              ###
+###          initialize population            ###
 ##################################################
 
 """ helper function to to map valid qubits to pairs """

@@ -35,7 +35,7 @@ function +(a::Performance,b::Performance)
     # start with using a's
     new_error_probabilities = a.error_probabilities
 
-    # if error probs are empty on a, use b. if b is also empty, dosen't matter, both are empty, use a.
+    # if error probs are empty on a, use b. if b is also empty, doesn't matter, both are empty, use a.
     if isempty(a.error_probabilities)
         new_error_probabilities =  b.error_probabilities
     elseif !isempty(b.error_probabilities)
@@ -66,7 +66,7 @@ end
 """
     ==(a::Performance, b::Performance)
 
-Compare equality of all internal values of a performance stuct. Used for testing.
+Compare equality of all internal values of a performance struct. Used for testing.
 """
 ==(a::Performance, b::Performance) = (a.error_probabilities == b.error_probabilities &&
                                     a.purified_pairs_fidelity == b.purified_pairs_fidelity &&

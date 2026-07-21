@@ -4,7 +4,8 @@ using JET
 using Test
 using QEPOptimize
 
-rep = report_package("QEPOptimize";
+rep = report_package(QEPOptimize;
+    target_modules=(QEPOptimize,),
     ignored_modules=(
         LastFrameModule(Base),
     )

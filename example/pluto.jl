@@ -24,7 +24,6 @@ begin
 	# Pkg.pkg"add Revise, CairoMakie, PlutoUI, Quantikz, BPGates, QuantumClifford, ProgressLogging"
 	# using Revise
 	# Pkg.develop(path="../")
-	
 	using CairoMakie
 	using PlutoUI
 	using PlutoUI:confirm, Slider
@@ -32,8 +31,9 @@ begin
 	using QEPOptimize
 	using QEPOptimize: initialize_pop!, step!, NetworkFidelity, Population, EVOLUTION_METRICS
 	using BPGates
-	using BPGates: PauliNoise, BellMeasure, CNOTPerm
-	using QuantumClifford: SparseGate, sCNOT, affectedqubits, BellMeasurement, Reset, sMX, sMZ, sMY
+	using QuantumClifford
+	using BPGates: BellMeasure, CNOTPerm, T1Noise, T2Noise, MeasurementFlipNoise
+	using QuantumClifford: SparseGate, sCNOT, affectedqubits, BellMeasurement, Reset, sMX, sMZ, sMY, PauliNoise, noisify, CircuitNoise
 end
 
 # ╔═╡ 8fc5cb18-70cc-4846-a62b-4cda69df12b0
@@ -52,11 +52,11 @@ begin
 	# These are here to allow re-definition of the configs' values, without triggering cells (only change the derefrenced value) 
 	# the types are nasty... I know..
 	
-	const config = Ref{@NamedTuple{num_simulations::Int64, number_registers::Int64, purified_pairs::Int64, code_distance::Int64, pop_size::Int64, noises::Vector{Any}}}()
+	const config = Ref{@NamedTuple{num_simulations::Int64, number_registers::Int64, purified_pairs::Int64, code_distance::Int64, pop_size::Int64, noises::Vector{Any},circuit_noise::Union{QuantumClifford.CircuitNoise,Nothing}}}()
 	
-	const init_config = Ref{@NamedTuple{start_ops::Int64, start_pop_size::Int64, num_simulations::Int64, number_registers::Int64, purified_pairs::Int64, code_distance::Int64, pop_size::Int64, noises::Vector{Any}}}()
+	const init_config = Ref{@NamedTuple{start_ops::Int64, start_pop_size::Int64, num_simulations::Int64, number_registers::Int64, purified_pairs::Int64, code_distance::Int64, pop_size::Int64, noises::Vector{Any},circuit_noise::Union{QuantumClifford.CircuitNoise,Nothing}}}()
 	
-	const step_config = Ref{@NamedTuple{max_ops::Int64, new_mutants::Int64, p_drop::Float64, p_mutate::Float64, p_gain::Float64, evolution_metric::Symbol, max_performance_calcs::Int64, num_simulations::Int64, number_registers::Int64, purified_pairs::Int64, code_distance::Int64, pop_size::Int64, noises::Vector{Any}}}()
+	const step_config = Ref{@NamedTuple{max_ops::Int64, new_mutants::Int64, p_drop::Float64, p_mutate::Float64, p_gain::Float64, evolution_metric::Symbol, max_performance_calcs::Int64, num_simulations::Int64, number_registers::Int64, purified_pairs::Int64, code_distance::Int64, pop_size::Int64, noises::Vector{Any},circuit_noise::Union{QuantumClifford.CircuitNoise,Nothing}}}()
 
 	const evolution_steps_ref = Ref{Int64}()
 
@@ -81,11 +81,26 @@ md"""
 
 * Network fidelity: $(Child( "network_fidelity", PlutoUI.Slider(0.:0.002:1, default=0.9, show_value=true)))
 
-* Gate error X: $(Child("paulix",PlutoUI.Slider(0.:0.002:0.1, default=0.01, show_value=true)))
+* Gate error X (1-qubit): $(Child("paulix",PlutoUI.Slider(0.:0.002:0.1, default=0.01, show_value=true)))
 
-* Gate error Y: $(Child("pauliy", PlutoUI.Slider(0.:0.002:0.1, default=0.01, show_value=true)))
+* Gate error Y (1-qubit): $(Child("pauliy", PlutoUI.Slider(0.:0.002:0.1, default=0.01, show_value=true)))
 
-* Gate error Z: $(Child( "pauliz",PlutoUI.Slider(0.:0.002:0.1, default=0.01, show_value=true)))
+* Gate error Z (1-qubit): $(Child( "pauliz",PlutoUI.Slider(0.:0.002:0.1, default=0.01, show_value=true)))
+
+* Gate error X (2-qubit): $(Child("paulix2", PlutoUI.Slider(0.:0.002:0.1, default=0.02, show_value=true)))
+
+* Gate error Y (2-qubit): $(Child("pauliy2", PlutoUI.Slider(0.:0.002:0.1, default=0.02, show_value=true)))
+
+* Gate error Z (2-qubit): $(Child("pauliz2", PlutoUI.Slider(0.:0.002:0.1, default=0.02, show_value=true)))
+
+* **Enable Local Circuit Noise:** $(Child("enable_circuit_noisification", PlutoUI.CheckBox(default=true)))
+
+* Idle Noise Model: $(Child("idle_noise_type", PlutoUI.Select([:none => "No idle noise", :pauli => "Pauli noise", :t1 => "T1 decoherence", :t2 => "T2 dephasing"], default = :t1)))
+* T1 Noise (λ₁): $(Child("t1_noise", PlutoUI.Slider(0.0:0.001:0.05, default=0.005, show_value=true)))
+* T2 Noise (λ₂): $(Child("t2_noise", PlutoUI.Slider(0.0:0.001:0.05, default=0.01, show_value=true)))
+* Idle Pauli Noise (p): $(Child("idle_pauli_noise", PlutoUI.Slider(0.0:0.002:0.1, default=0.01, show_value=true)))
+
+* Measurement Flip (p): $(Child("measurement_flip", PlutoUI.Slider(0.0:0.002:0.1, default=0.01, show_value=true)))
 
 ## Simulation Parameters
 
@@ -124,13 +139,41 @@ md"""
 
 # ╔═╡ cef70317-fc58-42b3-987b-a454064f0113
 begin
+    circuit_noise  = if c.enable_circuit_noisification
+        local_pauli_1q = PauliNoise(c.paulix, c.pauliy, c.pauliz)
+        local_pauli_2q = PauliNoise(c.paulix2, c.pauliy2, c.pauliz2)
+        local_t1 = BPGates.T1Noise(c.t1_noise)
+        local_t2 = BPGates.T2Noise(c.t2_noise)
+
+        idle_noise = if c.idle_noise_type == :pauli
+            local_pauli
+        elseif c.idle_noise_type == :t1
+            local_t1
+        elseif c.idle_noise_type == :t2
+            local_t2
+        else
+            nothing
+        end
+
+        QuantumClifford.CircuitNoise(
+			single_qubit = local_pauli_1q,
+			two_qubit    = local_pauli_2q,
+			idle_noise   = idle_noise,
+			measurement  = MeasurementFlipNoise(c.measurement_flip),
+		)
+    else
+        nothing
+    end
+
+
 	config[] = (
 			num_simulations=c.num_simulations,
 		    number_registers=c.number_registers,
 		    purified_pairs=c.purified_pairs,
 		    code_distance=c.code_distance, # For logical qubit fidelity
 		    pop_size=c.pop_size,
-			noises=[NetworkFidelity(c.network_fidelity), PauliNoise(c.paulix, c.pauliy, c.pauliz)],
+			noises=[NetworkFidelity(c.network_fidelity)],
+            circuit_noise = circuit_noise,
 		)
 	
 	init_config[] = (
@@ -209,12 +252,16 @@ Fidelity results for this circuit
 
 # ╔═╡ 81aa21b4-50f0-4695-a9d0-fd998b0c0cc1
 plot_circuit_analysis(
-	best_circuit;
-	num_simulations=fidelity_num_simulations,
-	config[].number_registers,
-	config[].purified_pairs,
-    noise_sets=[[PauliNoise(c.paulix, c.pauliy, c.pauliz)],[]],
-    noise_set_labels=["with gate noise", "no gate noise"]
+    best_circuit;
+    num_simulations = fidelity_num_simulations,
+    number_registers = config[].number_registers,
+    purified_pairs = config[].purified_pairs,
+    noises = config[].noises,
+    circuit_noise = config[].circuit_noise,
+    noise_set_labels = [
+        "with gate noise",
+        "no gate noise",
+    ],
 )
 
 
@@ -279,6 +326,7 @@ begin
 		end
 	end
 end
+
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """

@@ -39,7 +39,8 @@ function step!(
     p_gain=0.1,
     evolution_metric=:logical_qubit_fidelity,
     max_performance_calcs=10,
-    safe_canonicalize=true
+    safe_canonicalize=true,
+    circuit_noise::Union{QuantumClifford.CircuitNoise, Nothing} = nothing,
 )
     # Mark existing individuals as survivors
     # Survivors ensure that some individuals are carried over unchanged, maintaining good solutions
@@ -61,7 +62,8 @@ function step!(
         number_registers, # TODO (low priority) this should be by-default derived from `indiv`
         noises=[NetworkFidelity(0.9)], # TODO configurable noise
         evolution_metric=evolution_metric,
-        max_performance_calcs=max_performance_calcs
+        max_performance_calcs=max_performance_calcs,
+        circuit_noise
     )
     cull!(population, pop_size)
 end
@@ -102,7 +104,8 @@ function multiple_steps_with_history!(
     p_mutate=0.1,
     p_gain=0.1,
     evolution_metric=:logical_qubit_fidelity,
-    max_performance_calcs=10
+    max_performance_calcs=10,
+    circuit_noise::Union{QuantumClifford.CircuitNoise,Nothing} = nothing,
 )
     # Edge case: current population not the same size as requested pop, likely to happen in the pluto notebook where pop_size can be changing alot
     if length(population.individuals) != pop_size
@@ -144,6 +147,7 @@ function multiple_steps_with_history!(
             p_gain,
             evolution_metric,
             max_performance_calcs,
+            circuit_noise,
             safe_canonicalize = i > steps/2  # first half of steps, do unsafe canonicalization. Then, stick to safe.
         )
   
@@ -243,7 +247,8 @@ end
     code_distance::Int=1,
     noises=[NetworkFidelity(0.9)],
     evolution_metric=:logical_qubit_fidelity,
-    max_performance_calcs::Int=10
+    max_performance_calcs::Int=10,
+    circuit_noise::Union{QuantumClifford.CircuitNoise,Nothing} = nothing
 )
 
 Evaluate and Sort the individuals in descending order of fitness
@@ -256,7 +261,8 @@ function simulate_and_sort!(
     code_distance::Int=1,
     noises=[NetworkFidelity(0.9)],
     evolution_metric=:logical_qubit_fidelity,
-    max_performance_calcs::Int=10
+    max_performance_calcs::Int=10,
+    circuit_noise::Union{QuantumClifford.CircuitNoise,Nothing} = nothing,
 )
     # calculate and update each individual's performance
     function update!(indiv)
@@ -269,7 +275,8 @@ function simulate_and_sort!(
                 purified_pairs,
                 number_registers,
                 code_distance,
-                noises)
+                noises,
+                circuit_noise)
         end
         
         # Set fitness to whatever performance metric is supplied
@@ -323,7 +330,8 @@ function initialize_pop!(
     code_distance::Int=1,
     noises=[NetworkFidelity(0.9)],
     evolution_metric=:logical_qubit_fidelity,
-    max_performance_calcs=10
+    max_performance_calcs=10,
+    circuit_noise::Union{QuantumClifford.CircuitNoise,Nothing} = nothing,
 )
     valid_pairs=1:number_registers # TODO (low priority) decouple valid_pairs from number_registers
 
@@ -353,7 +361,8 @@ function initialize_pop!(
         code_distance,
         noises,
         evolution_metric,
-        max_performance_calcs
+        max_performance_calcs,
+        circuit_noise = circuit_noise,
     ),
 
     () -> cull!(population,pop_size))

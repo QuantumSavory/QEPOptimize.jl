@@ -9,7 +9,8 @@ function calculate_performance!(
     purified_pairs::Int=1,
     number_registers::Int=1, # TODO (low priority) this should be by-default derived from `indiv`
     code_distance::Int=1,
-    noises=[NetworkFidelity(0.9)]
+    noises=[NetworkFidelity(0.9)],
+    circuit_noise::Union{CircuitNoise,Nothing}=nothing
 )
 
     count_success = 0
@@ -25,7 +26,7 @@ function calculate_performance!(
 
     noisy_purification_circuit = indiv.ops
     for n in noises
-        noisy_purification_circuit = noisify_circuit(n, noisy_purification_circuit; number_registers)
+        noisy_purification_circuit = noisify_circuit(n, noisy_purification_circuit; number_registers, circuit_noise)
     end
 
     for _ in 1:num_simulations

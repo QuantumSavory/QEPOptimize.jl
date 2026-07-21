@@ -30,7 +30,7 @@ begin
 	using PlutoUI:confirm, Slider
 	using Quantikz
 	using QEPOptimize
-	using QEPOptimize: initialize_pop!, step!, NetworkFidelity, Population, EVOLUTION_METRICS
+	using QEPOptimize: initialize_pop!, step!, NetworkFidelity, to_qasm, define_Φ⁺_qasm, Population, EVOLUTION_METRICS
 	using BPGates
 	using BPGates: PauliNoise, BellMeasure, CNOTPerm
 	using QuantumClifford: SparseGate, sCNOT, affectedqubits, BellMeasurement, Reset, sMX, sMZ, sMY
@@ -278,6 +278,13 @@ begin
 			end
 		end
 	end
+end
+
+# ╔═╡ ef3dcaaa-d787-4520-a9df-3d91ab32f179
+begin
+	qasm_out = to_qasm(best_circuit.ops,number_registers,purified_pairs;comments=true,entanglement=define_Φ⁺_qasm)
+	print(qasm_out)
+	PlutoUI.DownloadButton(qasm_out,"qasm_output_qepo.txt")
 end
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
@@ -2245,6 +2252,10 @@ version = "3.6.0+0"
 # ╟─9a1b169a-36f5-4d2e-ad63-a7e184abde66
 # ╟─23123ce9-58b0-4eb7-8d39-fd56499b3ed2
 # ╟─e19cb382-99ae-4629-8242-83827c9e3631
+# ╠═49894406-6dfe-4aeb-8193-e31731bfab65
+# ╠═e99563b8-2827-4e0a-b7c5-e812fef7c6c5
+# ╠═c434086a-d9e3-436b-91ad-a7ddef56622d
+# ╠═ef3dcaaa-d787-4520-a9df-3d91ab32f179
 # ╟─b2f3c15c-1b03-4c4e-9c68-539f96ebd4cb
 # ╟─c434086a-d9e3-436b-91ad-a7ddef56622d
 # ╟─00000000-0000-0000-0000-000000000001

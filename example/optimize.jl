@@ -13,7 +13,7 @@ config = (;
     purified_pairs=1,
     code_distance=1,
     pop_size = 20,
-    noises=[NetworkFidelity(0.9), PauliNoise(0.01/3, 0.01/3, 0.01/3)],
+    noises=[NetworkFidelity(0.9)],
 )
 
 init_config = (;
@@ -60,8 +60,9 @@ fig = plot_circuit_analysis(
     number_registers = config.number_registers,
     purified_pairs = config.purified_pairs,
     noises = [NetworkFidelity(0.99)],  
-    circuit_noise = BPCircuitNoise(
-        gate_noise = PauliNoise(0.01/3, 0.01/3, 0.01/3),
+    circuit_noise = CircuitNoise(
+        single_qubit = PauliNoise(0.01/3, 0.01/3, 0.01/3),
+        two_qubit = PauliNoise(0.01/3, 0.01/3, 0.01/3)
     ),
     noise_set_labels = [
         "p = 0.01",

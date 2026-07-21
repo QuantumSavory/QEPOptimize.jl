@@ -3,9 +3,9 @@ function analyze_f_out_vs_f_in(
     num_simulations::Int=100000,
     number_registers::Int=2,
     purified_pairs::Int=1,
-    noises=[PauliNoise(0.01/3, 0.01/3, 0.01/3)],
+    noises=[NetworkFidelity(0.9)], # might have to modify this 
     f_ins = [0.01; 0.05:0.05:0.95; 0.99; 0.999],
-    circuit_noise::Union{BPCircuitNoise,Nothing}=nothing
+    circuit_noise::Union{QuantumClifford.CircuitNoise,Nothing}=nothing
 )
     f_outs = Float64[]
     probs = Float64[]
@@ -25,7 +25,7 @@ function plot_circuit_analysis(
     noises = [NetworkFidelity(0.9)],
     noise_set_labels = ["with local circuit noise","without local circuit noise"],
     f_ins = [0.01; 0.05:0.05:0.95; 0.99; 0.999],
-    circuit_noise::Union{BPCircuitNoise,Nothing} = nothing,
+    circuit_noise::Union{QuantumClifford.CircuitNoise,Nothing} = nothing,
 )
     fig = Figure()
     axF = Axis(fig[1,1])

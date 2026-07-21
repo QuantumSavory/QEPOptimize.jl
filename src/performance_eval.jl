@@ -10,7 +10,7 @@ function calculate_performance!(
     number_registers::Int=1, # TODO (low priority) this should be by-default derived from `indiv`
     code_distance::Int=1,
     noises=[NetworkFidelity(0.9)],
-    circuit_noise::Union{BPCircuitNoise,Nothing}=nothing
+    circuit_noise::Union{CircuitNoise,Nothing}=nothing
 )
 
     count_success = 0

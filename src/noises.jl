@@ -1,7 +1,5 @@
-
-import BPGates: noisify
-using BPGates: BPCircuitNoise
-
+using QuantumClifford: noisify, CircuitNoise
+using BPGates
 """
     f_in_to_pauli(f_in)
 
@@ -36,7 +34,7 @@ end
 NetworkFidelity(f) = NetworkPauliNoise(f_in_to_pauli(f)...)
 NetworkFidelity(f, (bias)) = NetworkPauliNoise(f_in_to_pauli_biased((f, bias)...))
 
-function noisify_circuit(n::NetworkPauliNoise, circuit; number_registers, circuit_noise::Union{BPCircuitNoise,Nothing}=nothing)
+function noisify_circuit(n::NetworkPauliNoise, circuit; number_registers, circuit_noise::Union{CircuitNoise,Nothing}=nothing)
     initial_noise = [PauliNoiseOp(i, n.px, n.py, n.pz) for i in 1:number_registers]
     network_noisy = [initial_noise; apply_network_noise.(Ref(n), circuit)]
     isnothing(circuit_noise) && return network_noisy

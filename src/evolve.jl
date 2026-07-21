@@ -40,7 +40,7 @@ function step!(
     evolution_metric=:logical_qubit_fidelity,
     max_performance_calcs=10,
     safe_canonicalize=true,
-    circuit_noise::Union{BPGates.BPCircuitNoise,Nothing} = nothing,
+    circuit_noise::Union{QuantumClifford.CircuitNoise, Nothing} = nothing,
 )
     # Mark existing individuals as survivors
     # Survivors ensure that some individuals are carried over unchanged, maintaining good solutions
@@ -105,7 +105,7 @@ function multiple_steps_with_history!(
     p_gain=0.1,
     evolution_metric=:logical_qubit_fidelity,
     max_performance_calcs=10,
-    circuit_noise::Union{BPGates.BPCircuitNoise,Nothing} = nothing,
+    circuit_noise::Union{QuantumClifford.CircuitNoise,Nothing} = nothing,
 )
     # Edge case: current population not the same size as requested pop, likely to happen in the pluto notebook where pop_size can be changing alot
     if length(population.individuals) != pop_size
@@ -248,7 +248,7 @@ end
     noises=[NetworkFidelity(0.9)],
     evolution_metric=:logical_qubit_fidelity,
     max_performance_calcs::Int=10,
-    circuit_noise::Union{BPGates.BPCircuitNoise,Nothing} = nothing
+    circuit_noise::Union{QuantumClifford.CircuitNoise,Nothing} = nothing
 )
 
 Evaluate and Sort the individuals in descending order of fitness
@@ -262,7 +262,7 @@ function simulate_and_sort!(
     noises=[NetworkFidelity(0.9)],
     evolution_metric=:logical_qubit_fidelity,
     max_performance_calcs::Int=10,
-    circuit_noise::Union{BPGates.BPCircuitNoise,Nothing} = nothing,
+    circuit_noise::Union{QuantumClifford.CircuitNoise,Nothing} = nothing,
 )
     # calculate and update each individual's performance
     function update!(indiv)
@@ -331,7 +331,7 @@ function initialize_pop!(
     noises=[NetworkFidelity(0.9)],
     evolution_metric=:logical_qubit_fidelity,
     max_performance_calcs=10,
-    circuit_noise::Union{BPGates.BPCircuitNoise,Nothing} = nothing,
+    circuit_noise::Union{QuantumClifford.CircuitNoise,Nothing} = nothing,
 )
     valid_pairs=1:number_registers # TODO (low priority) decouple valid_pairs from number_registers
 

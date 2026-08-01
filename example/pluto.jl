@@ -17,10 +17,9 @@ end
 
 # ╔═╡ a1b2c3d4-1234-4321-8765-abcdef012345
 begin
-    using Pkg
-    Pkg.develop(path="/Users/rohan/Desktop/lab_work/QuantumClifford.jl")
-    Pkg.develop(path="/Users/rohan/Desktop/lab_work/BPGates.jl")
-    Pkg.develop(path="/Users/rohan/Desktop/lab_work/QEPOptimize.jl")
+    import Pkg
+    Pkg.activate("/Users/rohan/Desktop/lab_work/QEPOptimize.jl")
+    Pkg.instantiate()
 end
 
 # ╔═╡ 353e15de-0a9b-4107-a265-28953e1deee2

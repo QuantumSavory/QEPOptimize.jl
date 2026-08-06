@@ -50,7 +50,7 @@ function step!(
 
     # TODO parents and offspring circuits
 
-    add_mutations!(population.individuals; max_ops, new_mutants, valid_pairs=1:number_registers) # TODO (low priority) decouple valid_pairs from number_registers
+    add_mutations!(population.individuals; max_ops, new_mutants, valid_pairs=1:number_registers, p_drop=p_drop, p_mutate=p_mutate, p_gain=p_gain) # TODO (low priority) decouple valid_pairs from number_registers
 
     canonicalize_cleanup!(population,number_registers,purified_pairs;safe=safe_canonicalize)
 
@@ -60,7 +60,7 @@ function step!(
         num_simulations,
         purified_pairs,
         number_registers, # TODO (low priority) this should be by-default derived from `indiv`
-        noises=[NetworkFidelity(0.9)], # TODO configurable noise
+        noises=noises, # TODO configurable noise
         evolution_metric=evolution_metric,
         max_performance_calcs=max_performance_calcs,
         circuit_noise
@@ -98,7 +98,7 @@ function multiple_steps_with_history!(
     num_simulations::Int=100,
     pop_size::Int=100,
     code_distance::Int=1,
-    noises=[NetworkFidelity(0.9)],
+    noises = [NetworkFidelity(0.9)],
     new_mutants::Int=10,
     p_drop=0.1,
     p_mutate=0.1,
@@ -117,7 +117,7 @@ function multiple_steps_with_history!(
         while length(population.individuals) < pop_size
             @info "Population size too low, increasing" # Include a message to make it clear if we get stuck in this loop
             # Add until there are enough 
-            add_mutations!(population.individuals; max_ops, new_mutants, valid_pairs=1:number_registers) 
+            add_mutations!(population.individuals; max_ops, new_mutants, valid_pairs=1:number_registers, p_drop=p_drop, p_mutate=p_mutate, p_gain=p_gain) # TODO (low priority) decouple valid_pairs from number_registers
         end
         # And if we have too much (maybe from the loop above), cull the population to the correct amount
         cull!(population, pop_size)

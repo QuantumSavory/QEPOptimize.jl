@@ -101,7 +101,7 @@ md"""
 
 * **Enable Local Circuit Noise:** $(Child("enable_circuit_noisification", PlutoUI.CheckBox(default=true)))
 
-* Idle Noise Model: $(Child("idle_noise_type", PlutoUI.Select([:none => "No idle noise", :pauli => "Pauli noise", :t1 => "T1 decoherence", :t2 => "T2 dephasing"], default = :t1)))
+* Idle Noise Model: $(Child("idle_noise_type", PlutoUI.Select([:none => "No idle noise", :pauli => "Pauli noise", :t1_t2 => "T1 + T2 decoherence"], default = :t1_t2)))
 * T1 Noise (λ₁): $(Child("t1_noise", PlutoUI.Slider(0.0:0.001:0.05, default=0.005, show_value=true)))
 * T2 Noise (λ₂): $(Child("t2_noise", PlutoUI.Slider(0.0:0.001:0.05, default=0.01, show_value=true)))
 * Idle Pauli Noise (p): $(Child("idle_pauli_noise", PlutoUI.Slider(0.0:0.002:0.1, default=0.01, show_value=true)))
@@ -154,10 +154,8 @@ begin
         idle_noise = if c.idle_noise_type == :pauli
             p = c.idle_pauli_noise
             PauliNoise(p / 3, p / 3, p / 3)
-        elseif c.idle_noise_type == :t1
-            local_t1
-        elseif c.idle_noise_type == :t2
-            local_t2
+        elseif c.idle_noise_type == :t1_t2
+            T1T2Noise(c.t1_noise, c.t2_noise)
         else
             nothing
         end

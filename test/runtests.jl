@@ -21,6 +21,10 @@ testfilter = ti -> begin
     push!(exclude, :jet)
   end
 
+  if get(ENV, "QUANTUMSAVORY_DOWNGRADE_TEST", "") == "true"
+    push!(exclude, :aqua)
+  end
+
   return all(!in(exclude), ti.tags)
 end
 

@@ -36,9 +36,8 @@ NetworkFidelity(f, (bias)) = NetworkPauliNoise(f_in_to_pauli_biased((f, bias)...
 
 function noisify_circuit(n::NetworkPauliNoise, circuit; number_registers, circuit_noise::Union{CircuitNoise,Nothing}=nothing)
     initial_noise = [PauliNoiseOp(i, n.px, n.py, n.pz) for i in 1:number_registers]
-    network_noisy = [initial_noise; apply_network_noise.(Ref(n), circuit)]
-    isnothing(circuit_noise) && return network_noisy
-    return noisify(network_noisy, circuit_noise)
+    circuit_stage = isnothing(circuit_noise)||isempty(circuit) ? circuit : noisify(circuit, circuit_noise)
+    return [initial_noise; apply_network_noise.(Ref(n), circuit_stage)]
 end
 
 apply_network_noise(n::NetworkPauliNoise, b::BellMeasure) = NoisyBellMeasureNoisyReset(b, 0.0, n.px, n.py, n.pz)

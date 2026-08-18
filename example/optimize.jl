@@ -13,7 +13,7 @@ config = (;
     purified_pairs=1,
     code_distance=1,
     pop_size = 20,
-    noises=[NetworkFidelity(0.9), PauliNoise(0.01/3, 0.01/3, 0.01/3)],
+    noises=[NetworkFidelity(0.9)],
 )
 
 init_config = (;
@@ -54,9 +54,20 @@ best_circuit = pop.individuals[1]
 
 ##
 
-fig = plot_circuit_analysis(best_circuit; num_simulations=100000, config.number_registers, config.purified_pairs,
-    noise_sets=[[PauliNoise(0.01/3, 0.01/3, 0.01/3)],[]],
-    noise_set_labels=["p=0.01", "p=0"]
+fig = plot_circuit_analysis(
+    best_circuit;
+    num_simulations = 100000,
+    number_registers = config.number_registers,
+    purified_pairs = config.purified_pairs,
+    noises = [NetworkFidelity(0.99)],  
+    circuit_noise = CircuitNoise(
+        single_qubit = PauliNoise(0.01/3, 0.01/3, 0.01/3),
+        two_qubit = PauliNoise(0.01/3, 0.01/3, 0.01/3)
+    ),
+    noise_set_labels = [
+        "p = 0.01",
+        "p = 0",
+    ],
 )
 
 display(fig)
